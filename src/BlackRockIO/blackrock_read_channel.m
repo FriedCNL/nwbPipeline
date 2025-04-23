@@ -3,10 +3,13 @@ function outFiles = blackrock_read_channel(inFile, electrodeInfoFile, skipExist,
 % Blackrock data is saved in a single file containing all channels. We use
 % openNSx.m to read each channel for the .ns3/.ns5/.ns6 file and save data
 % separately.
-% when using channelNames to rename the file, make sure its order is
-% matches data in .NSx file correctly. If some channels are skipped, fill
-% the channelNames with empty strings. The best practice would be to have
-% the channels named correctly in the .NSx header.
+% The NSx header contains bank, port, and channel number info.
+% When a montage is generated and channelNames are passed through 
+% we use this info to match the BR channel to the correct channelNames
+% entry.
+% If no channelNames passed through default chan filename is used
+% G[A-D][1-4]-elec{electrode_number}_001.mat 
+% ("_001" to be consistent with NLX)
 
 
 if nargin < 3 || isempty(skipExist)
@@ -22,22 +25,76 @@ electrodeInfoObj = matfile(electrodeInfoFile);
 NSx = electrodeInfoObj.NSx;
 channelId = NSx.MetaTags.ChannelID;
 % channelIdx = channelId <= 256;
-channelIdx = channelId <= inf;
+neuralChannelIdx = channelId <= 256;
+% auxChannelIdx = channelID > 256; % this is true for micro, not sure about macro? do we want separate aux extraction? how does NLX code do it?
 
-% trailing null characters (ASCII code 0) are often used in C-style strings
-% to indicate the end of the string but can be problematic in MATLAB.
-outFiles = cellfun(@(x)fullfile(outputFilePath, [x(double(x) ~= 0), '.mat']), {NSx.ElectrodesInfo(channelIdx).Label}, 'UniformOutput', false);
+neural_electrodes_info = NSx.ElectrodesInfo(neuralChannelIdx);
 
-if ~isempty(channelNames)
-    outFilesRename = cellfun(@(x)fullfile(outputFilePath, [x, '.mat']), channelNames, 'UniformOutput', false);
-    outFiles(1:length(outFilesRename)) = outFilesRename;
+n_channels = length(neural_electrodes_info);
+connector_banks = [1, 2, 3, 4];
+bank_mapping = {'A','B','C', 'D'};
+outFiles = cell(n_channels,1);
+matched_channels = cell(n_channels,1); % store to compare if any chans in names not matched
+
+% loop over neural channels and generate output file name
+for n=1:n_channels
+
+    % read bank and connector pin info from table
+    bank_num = neural_electrodes_info(n).ConnectorBank;
+    bank = bank_mapping{connector_banks==bank_num};
+
+    connector_pin = double(neural_electrodes_info(n).ConnectorPin);
+
+    % figure out your port and channel number
+    port_num = ceil(connector_pin/8); % will return value between 1 and 4
+    channel_num = connector_pin - (8 * (port_num - 1)); % returns value 1-8
+
+    % generate a default file name for cases of no channelNames passed or no matches found.
+    default_chan_name = ['G' bank num2str(port_num) '-elec' num2str(neural_electrodes_info(n).ChannelID) '_001.mat'];
+
+    % if channelNames have been passed through
+    if ~isempty(channelNames)
+
+        % generate a regex pattern and search through the channel names for a match
+        channel_pattern = ['G' bank num2str(port_num) '-(.*?)' num2str(channel_num)];
+
+        chan_name_match = false(length(channelNames),1);
+        for k=1:length(channelNames)     
+              match = regexp(channelNames{k}, channel_pattern,'once');
+              if match==1
+                  chan_name_match(k) = match;
+              end
+        end
+        matched_chan = channelNames(chan_name_match);
+
+        if isempty(matched_chan) % if no match found, use default fn
+            outFiles{n} = fullfile(outputFilePath,default_chan_name);
+            disp(['Despite passing channel names have not found a match, defaulting filename to: ' outFiles{n}])
+        elseif length(matched_chan)>1 % if more than one match break run
+            disp(['More than 1 channel matches for ' channel_pattern '- check your montage!!'])
+            return
+        elseif length(matched_chan)==1 % if one match, use to generate output file name
+            outFiles{n} = fullfile(outputFilePath, [matched_chan{1} '_001.mat']);
+            matched_channels{n} = char(matched_chan{1});
+        end
+    else % no channel names passed through, use default fn     
+        outFiles{n} = fullfile(outputFilePath,default_chan_name);
+    end
+
 end
 
+% remove empty cells 
+matched_channels(cellfun(@(x)isempty(x),matched_channels),:)=[];
+missing_chan_idx = ~ismember(channelNames,matched_channels);
+% this info is reported after extraction loop below
+
+% save outFile names to csv
 writecell(outFiles(:), fullfile(fileparts(outFiles{1}), 'outFileNames.csv'));
 
 nchan = length(outFiles);
 pattern = 'G[A-D][1-4]-(.*?)[1-9]';
 
+% extract data on each chan
 parfor i = 1: nchan
     if skipExist && exist(outFiles{i}, 'file')
         fprintf('skip existing file: %s\n', outFiles{i});
@@ -85,6 +142,12 @@ parfor i = 1: nchan
     movefile(tmpOutFile, outFiles{i});
 end
 
-fprintf('Done.\n');
+% report if any channel names passed through have not been matched
+if sum(missing_chan_idx)>0
+    fprintf('\nWARNING!!\n"The following channels were passed to be extracted but have not been matched with the BR data:\n"')
+    disp(channelNames(missing_chan_idx))
+end
+
+fprintf('\nDone.\n');
 
 end
