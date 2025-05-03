@@ -20,8 +20,24 @@ function spikeAmplitudeDistributionUI(classes, spikeAmplitudes)
     % Get unique classes
     uniqueClasses = unique(classes);
 
-    % Define a color map for the classes
-    colors = lines(length(uniqueClasses));
+    colors = [ ...
+        0 0 0 ; % 0 cluster is plotted
+        0 0 1 ;  % 1  blue % don't need black first for aux! Otherwise it misindexes and repeats green on aux
+        1 0 0 ;  % 2  red
+        0 1 0 ;  % 3  green
+        0.00 0.60 0.60 ;  % 4  teal  (dark cyan)
+        0.70 0.70 0.00 ;  % 5  mustard (dark yellow)
+        0.55 0.27 0.07 ;  % 6  brown
+        0.50 0.00 0.50 ;  % 7  purple
+        0.93 0.57 0.13 ;  % 8  orange
+        0.40 0.55 0.65 ;  % 9  slate / gray-blue
+        0.83 0.68 0.21 ;  % 10 gold
+        0.30 0.30 0.30 ;  % 11 dark gray
+        0.20 0.80 0.80 ; % 12 aqua-green
+    ];
+    nColors = size(colors,1);
+    % % Define a color map for the classes
+    % colors = lines(length(uniqueClasses));
 
     % Create the main figure
     fig = figure('Name', 'Spike Amplitude Distribution', 'NumberTitle', 'off', 'Position', [100, 100, 800, 600]);
@@ -69,10 +85,20 @@ function spikeAmplitudeDistributionUI(classes, spikeAmplitudes)
 
         % Plot histograms for each selected class
         for i = 1:length(selectedClasses)
-            classIdx = selectedClasses(i);
-            classAmplitudes = spikeAmplitudes(classes == classIdx);
-            histogram(ax, classAmplitudes, 'BinEdges', linspace(min(spikeAmplitudes), max(spikeAmplitudes), binSize), ...
-                'FaceColor', colors(i, :), 'EdgeColor', 'none', 'FaceAlpha', 0.7);
+            % chatGPT
+            classIdx     = selectedClasses(i);
+            colIdx       = mod(classIdx, nColors-1)+1;   % class-1 → blue row
+            classAmps    = spikeAmplitudes(classes == classIdx);
+            
+            histogram(ax, classAmps, ...
+                'BinEdges', linspace(min(spikeAmplitudes), max(spikeAmplitudes), binSize), ...
+                'FaceColor', colors(colIdx,:), ...
+                'EdgeColor', 'none', ...
+                'FaceAlpha', 0.7);
+            % classIdx = selectedClasses(i);
+            % classAmplitudes = spikeAmplitudes(classes == classIdx);
+            % histogram(ax, classAmplitudes, 'BinEdges', linspace(min(spikeAmplitudes), max(spikeAmplitudes), binSize), ...
+            %     'FaceColor', colors(i, :), 'EdgeColor', 'none', 'FaceAlpha', 0.7);
             legendEntries{end+1} = sprintf('Class %d', classIdx); %#ok<AGROW>
         end
 

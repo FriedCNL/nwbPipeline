@@ -25,11 +25,29 @@ if ~isempty(clustersToShow)
         clustersToShow,'uniformoutput',0);
 
     hold(ax,'on');
-    colors = {'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k' ...
-        'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k',...
-        'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b'}';
-
-    cellfun(@(t,p,c)plot(ax,t,p,'.','color',c,'markersize',8),ts,peaks,colors(1:length(ts)));
+    colors = [ ...
+        0 0 1 ;  % 1  blue % don't need black first for aux! Otherwise it misindexes and repeats green on aux
+        1 0 0 ;  % 2  red
+        0 1 0 ;  % 3  green
+        0.00 0.60 0.60 ;  % 4  teal  (dark cyan)
+        0.70 0.70 0.00 ;  % 5  mustard (dark yellow)
+        0.55 0.27 0.07 ;  % 6  brown
+        0.50 0.00 0.50 ;  % 7  purple
+        0.93 0.57 0.13 ;  % 8  orange
+        0.40 0.55 0.65 ;  % 9  slate / gray-blue
+        0.83 0.68 0.21 ;  % 10 gold
+        0.30 0.30 0.30 ;  % 11 dark gray
+        0.20 0.80 0.80 ; % 12 aqua-green
+    ];
+    % colors = ['b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b'];
+    nColors = size(colors,1);
+    %chatGPT
+    for k = 1:numel(ts)
+        colIdx = mod(clustersToShow(k), nColors-1);   % cluster-1 → blue row
+        plot(ax, ts{k}, peaks{k}, '.', ...
+            'Color', colors(colIdx,:), 'MarkerSize', 8);
+    end
+    % cellfun(@(t,p,c)plot(ax,t,p,'.','color',c,'markersize',8),ts,peaks,colors(1:length(ts)));
 
     maxPeak = max(cell2mat(peaks)); minPeak = min(cell2mat(peaks));
     maxTime = max(spk_times);
