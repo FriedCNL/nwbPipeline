@@ -202,10 +202,26 @@ cla(handles.projections, 'reset');
 
 % Plot clusters
 ylimit = [];
-colors = ['k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b'];
-
+colors = [ ...
+    0 0 0 ;  % 0 k % need black first as 0 cluster
+    0 0 1 ;  % 1  blue
+    1 0 0 ;  % 2  red
+    0 1 0 ;  % 3  green
+    0.00 0.60 0.60 ;  % 4  teal  (dark cyan)
+    0.70 0.70 0.00 ;  % 5  mustard (dark yellow)
+    0.55 0.27 0.07 ;  % 6  brown
+    0.50 0.00 0.50 ;  % 7  purple
+    0.93 0.57 0.13 ;  % 8  orange
+    0.40 0.55 0.65 ;  % 9  slate / gray-blue
+    0.83 0.68 0.21 ;  % 10 gold
+    0.30 0.30 0.30 ;  % 11 dark gray
+    0.20 0.80 0.80 ; % 12 aqua-green
+];
+% colors = ['k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'k' 'b' 'r' 'g' 'c' 'm' 'y' 'b' 'r' 'g' 'c' 'm' 'y' 'b'];
+nColors = size(colors,1);
 
 for i = 1:nclusters+1
+    colIdx = mod(i-1, nColors) + 1;   % wraps 1…nColors repeatedly
     if ~ (isempty(class0) && i==1)
         %PLOTS SPIKES OR PROJECTIONS
 
@@ -220,10 +236,10 @@ for i = 1:nclusters+1
 %     the time, so I commented out the above.
         if get(handles.spike_shapes_button, 'value') ==1
             av = mean(spikes(classDefs{i}, :));
-            plot(handles.projections, 1:ls, av, 'color', colors(i), 'linewidth', 2);
+            plot(handles.projections, 1:ls, av, 'color', colors(colIdx,:), 'LineWidth', 2);%i), 'linewidth', 2);
             xlim([1 ls])
         else
-            plot(inspk(classDefs{i}, 1), inspk(classDefs{i}, 2), '.', 'color', colors(i) , 'markersize', .5);
+            plot(inspk(classDefs{i}, 1), inspk(classDefs{i}, 2), '.', 'color', colors(colIdx,:), 'MarkerSize', .5);%i) , 'markersize', .5);
         end
 
         if i < 5
@@ -236,7 +252,7 @@ for i = 1:nclusters+1
 
             if get(handles.plot_all_button,'value') ==1
 
-                plot(ax,spikes(classDefs{i}(permut), :)','color', colors(i) );
+                plot(ax,spikes(classDefs{i}(permut), :)','color', colors(colIdx,:));%i) );
                 if i==1
                     plot(ax,1:ls,av,'c','linewidth',2)
                     plot(ax,1:ls,avup,'c','linewidth',.5)
@@ -246,7 +262,7 @@ for i = 1:nclusters+1
                     plot(ax,1:ls,avup,1:ls,avdw,'color', [.4 .4 .4], 'linewidth', .5)
                 end
             else
-                plot(ax,1:ls,av,'color',colors(i),'linewidth',2)
+                plot(ax,1:ls,av,'color',colors(colIdx,:), 'LineWidth', 2);%i),'linewidth',2)
                 plot(ax,1:ls,avup,1:ls,avdw,'color', [.65 .65 .65], 'linewidth', .5)
             end
             xlim(ax,[1 ls])
@@ -264,7 +280,11 @@ for i = 1:nclusters+1
             multi_isi= sum(N(1:3));
             pct_violations = multi_isi/length(spkTimeDiff);
             % Builds and plots the histogram
-            bar(isiAx, X(1:end-1), N(1:end-1))
+            bar(isiAx, X(1:end-1), N(1:end-1), ... % chatGPT suggestion
+                'FaceColor', colors(colIdx,:), ...
+                'EdgeColor', colors(colIdx,:), ...
+                'LineWidth', 0.01);
+            % bar(isiAx, X(1:end-1), N(1:end-1))
             xlim(isiAx, [0 handles.(['nbins' num2str(i-1)])])
             %The following line generates an error in Matlab 7.3
             %eval(['set(get(gca,''children''),''FaceColor'',''' colors(i) ''',''EdgeColor'',''' colors(i) ''',''Linewidth'',0.01);']);
