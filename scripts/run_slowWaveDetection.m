@@ -6,9 +6,9 @@ clear
 % the main path for extracted data here -
 % for the given example, it's in the same folder as this code:
 
-base_path = '/Users/XinNiuAdmin/HoffmanMount/data/PIPELINE_vc/ANALYSIS/MovieParadigm/561_MovieParadigm/Experiment-4/';
+base_path = 'F:\566\Experiment-8';
 data_p_path = fullfile(base_path, 'CSC_macro');
-outputFolder = fullfile(base_path, 'Spindles');
+outputFolder = fullfile(base_path, 'slowWaves');
 
 if ~exist(outputFolder, "dir")
     mkdir(outputFolder);
@@ -21,8 +21,8 @@ channel_index = 25;
 %% an example for detecting spindles directly using SpindleDetectorClass (it's the same thing the wrapper below does in batch)
 
 %loading - sleep scoring, IIS, data
-sleepScoring = load(sleepScoringFileName);
-sleepScoring = sleepScoring.sleep_score_vec;
+% sleepScoring = load(sleepScoringFileName);
+% sleepScoring = sleepScoring.sleep_score_vec;
 sleepScoring = [];
 
 %% load or perform interictal Spikes Detection
@@ -36,15 +36,13 @@ returnStats = 1;
 detector = SlowWavesDetectorClass;
 detector.samplingRate = 2000;
 
-[spindlesTimes, spindleStats, spindlesStartEndTimes] = detector.findSlowWavesStaresina(currData, sleepScoring, peakTimes, returnStats);
+slowWavesTimes = detector.findSlowWavesStaresina(currData, sleepScoring, peakTimes);
 
-matObj = matfile(fullfile(outputFolder, sprintf('spindles_%s.mat', channelName)), "Writable", true);
-matObj.spindlesTimes = spindlesTimes;
-matObj.spindleStats = spindleStats;
-matObj.spindlesStartEndTimes = spindlesStartEndTimes;
+matObj = matfile(fullfile(outputFolder, sprintf('slowWaves_%s.mat', channelName)), "Writable", true);
+matObj.slowWavesTimes = slowWavesTimes;
 
 %plotting the single spindles and saving the figures
-detector.plotSpindlesSimple(currData, spindlesTimes, outputFolder)
+detector.plotSpindlesSimple(currData, slowWavesTimes, outputFolder)
 
 % scroll through spindles and their spectrograms using any key
 blockSize = 4;
