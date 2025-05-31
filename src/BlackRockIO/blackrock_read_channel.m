@@ -100,7 +100,7 @@ resolution = electrode_table.Resolution;
 units = electrode_table.AnalogUnits;
 units = cellfun(@(s) regexp(s, '[A-Za-z0-9]+', 'match', 'once'), units, 'UniformOutput', false);
 %% extract data on each chan
-parfor i = nsx_chans
+parfor i = 1:length(nsx_chans)
     if skipExist && exist(outFiles{i}, 'file')
         fprintf('skip existing file: %s\n', outFiles{i});
         continue
@@ -124,9 +124,9 @@ parfor i = nsx_chans
     fprintf('writing data to: %s\n', outFiles{i});
 
     try
-        NSx = openNSx('report','read', inFile, 'channels', i, 'precision', 'int16');
+        NSx = openNSx('report','read', inFile, 'channels', nsx_chans(i), 'precision', 'int16');
     catch e
-        warning('error occurs reading channel: %d', i);
+        warning('error occurs reading channel: %d', nsx_chans(i));
         disp(e);
         disp(e.stack);
         continue
@@ -143,11 +143,11 @@ parfor i = nsx_chans
     outFileObj.data = data;
     outFileObj.samplingInterval = samplingInterval;
     %outFileObj.samplingIntervalSeconds = seconds(samplingInterval);
-    outFileObj.BlackRockUnits = resolution(i);
-    outFileObj.ChannelID = channelIDs(i);
-    outFileObj.ConnectorBank = bank(i);
-    outFileObj.ConnectorPin = pin(i);
-    outFileObj.UnitsAfterConv = units{i};
+    outFileObj.BlackRockUnits = resolution(nsx_chans(i)); %#ok<*PFBNS>
+    outFileObj.ChannelID = channelIDs(nsx_chans(i));
+    outFileObj.ConnectorBank = bank(nsx_chans(i));
+    outFileObj.ConnectorPin = pin(nsx_chans(i));
+    outFileObj.UnitsAfterConv = units{nsx_chans(i)};
     movefile(tmpOutFile, outFiles{i});
 end
 
@@ -325,19 +325,19 @@ end
 
 function  [outFiles,nsx_chans,channel_in_montage_but_not_rec,channels_in_rec_but_not_montage] = create_analogue_filenames(channelNames,outputFilePath, rec_num,electrode_table)
 
-n_channels = length(electrode_table);
-outFiles = cell(n_channels,1);
-nsx_chans = NaN(1, n_channels);
+n_inputs_requested = length(channelNames);
+outFiles = cell(n_inputs_requested,1);
+nsx_chans = NaN(1, n_inputs_requested);
 labels = cellfun(@(s) regexp(s, '[A-Za-z0-9]+', 'match', 'once'), electrode_table.Label, 'UniformOutput', false);
 % for logging missing channels
-matched_channels = cell(n_channels,1); % store to compare if any chans in names not matched
-channel_in_montage_but_not_rec = cell(n_channels,1);
+matched_channels = cell(n_inputs_requested,1); % store to compare if any chans in names not matched
+channel_in_montage_but_not_rec = cell(n_inputs_requested,1);
 
-for n = 1:length(channelNames)
+for n = 1:n_inputs_requested
      % find row in table
     row_num = find(contains(electrode_table.Label,channelNames{n}));  
     if isempty(row_num)
-        channel_in_montage_but_not_rec{n} = labels{row_num};
+        channel_in_montage_but_not_rec{n} = channelNames{n};
     else
         nsx_chans(n) = row_num;
         matched_channels{n} = labels{row_num};
@@ -347,6 +347,8 @@ for n = 1:length(channelNames)
 end
 
 % remove empty elements
+outFiles(cellfun(@(x)isempty(x),outFiles)) = [];
+nsx_chans(isnan(nsx_chans))=[];
 matched_channels(cellfun(@(x)isempty(x),matched_channels)) = [];
 channel_in_montage_but_not_rec(cellfun(@(x)isempty(x),channel_in_montage_but_not_rec)) = [];
 
