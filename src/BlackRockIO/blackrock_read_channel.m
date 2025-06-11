@@ -106,6 +106,9 @@ parfor i = 1:length(nsx_chans)
         continue
     end
 
+    if isempty(outFiles{i})
+        continue
+    end
     [~, outFile] = fileparts(outFiles{i});
     if isempty(outFile)
         continue
