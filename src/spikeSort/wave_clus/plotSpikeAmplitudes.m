@@ -58,10 +58,13 @@ function spikeAmplitudeDistributionUI(classes, spikeAmplitudes)
         checkboxes(i) = uicontrol('Parent', checkboxPanel, 'Style', 'checkbox', 'String', sprintf('Class %d', uniqueClasses(i)), ...
             'Position', [10, 300 - 30 * i, 100, 20], 'Value', 1);
     end
-
+    
+    % set noise cluster to 0 by default
+    set(checkboxes(1), 'Value', 0);
+    
     % Create an edit box for bin size
     uicontrol('Parent', fig, 'Style', 'text', 'String', 'Bin Size:', 'Position', [200, 50, 60, 20]);
-    binSizeEdit = uicontrol('Parent', fig, 'Style', 'edit', 'String', '30', 'Position', [260, 50, 60, 25]);
+    binSizeEdit = uicontrol('Parent', fig, 'Style', 'edit', 'String', '100', 'Position', [260, 50, 60, 25]);
 
     % Create a button to plot
     plotButton = uicontrol('Parent', fig, 'Style', 'pushbutton', 'String', 'Plot', ...
