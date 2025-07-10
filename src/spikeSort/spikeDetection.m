@@ -54,6 +54,12 @@ parfor i = 1: size(cscFiles, 1)
     fprintf(['spike detection: \n', sprintf('%s \n', channelFiles{:})])
 
     matobj = matfile(tempSpikeFilename, 'Writable', true);
+    % add placeholders so variables still exist even when no spikes are
+    % detected in any recordings (I think these vars are meant to be in this 
+    % format in that case) since addition of isempty(spikes) clause below 
+    % would mean they are not present at all - SD
+    matobj.spikes = single([]);      
+    matobj.spikeTimestamps = [];     
     matobj_empty = true;
     % spikes = cell(nSegments, 1);
     xfDetect = cell(nSegments, 1);
@@ -110,6 +116,12 @@ parfor i = 1: size(cscFiles, 1)
         timestamps = [];
 
         try
+            if isempty(spikes)
+                % nothing to write or append—just continue
+                % added to deal with cases where first recording has no
+                % spikes detected but subsequent recordings do
+                continue
+            end
             if matobj_empty
                 fprintf('spikeDetection: write spikes:\n channel: %s\n%s\n', channelFiles{j}, tempSpikeFilename);
                 matobj.spikes = single(spikes);
