@@ -63,8 +63,8 @@ function spikeAmplitudeDistributionUI(classes, spikeAmplitudes)
     set(checkboxes(1), 'Value', 0);
     
     % Create an edit box for bin size
-    uicontrol('Parent', fig, 'Style', 'text', 'String', 'Bin Size:', 'Position', [200, 50, 60, 20]);
-    binSizeEdit = uicontrol('Parent', fig, 'Style', 'edit', 'String', '100', 'Position', [260, 50, 60, 25]);
+    uicontrol('Parent', fig, 'Style', 'text', 'String', 'Bin Size (ms):', 'Position', [180, 50, 80, 20]);
+    binSizeEdit = uicontrol('Parent', fig, 'Style', 'edit', 'String', '1', 'Position', [260, 50, 60, 25]);
 
     % Create a button to plot
     plotButton = uicontrol('Parent', fig, 'Style', 'pushbutton', 'String', 'Plot', ...
@@ -93,8 +93,10 @@ function spikeAmplitudeDistributionUI(classes, spikeAmplitudes)
             colIdx       = mod(classIdx, nColors-1)+1;   % class-1 → blue row
             classAmps    = spikeAmplitudes(classes == classIdx);
             
+            bins = min(spikeAmplitudes):binSize:max(spikeAmplitudes)+binSize;
+
             histogram(ax, classAmps, ...
-                'BinEdges', linspace(min(spikeAmplitudes), max(spikeAmplitudes), binSize), ...
+                'BinEdges', bins, ...  %linspace(min(spikeAmplitudes), max(spikeAmplitudes), binSize)
                 'FaceColor', colors(colIdx,:), ...
                 'EdgeColor', 'none', ...
                 'FaceAlpha', 0.7);
