@@ -32,6 +32,10 @@ if runRemovePLI && ismember('signalRemovePLI', who('-file', filename)) && ~isemp
     % up with runCAR.
     signal = matObj.signalRemovePLI;
     runRemovePLI = false;
+    if clearRemovePLI
+        matObj = matfile(filename, 'Writable', true);
+        matObj.signalRemovePLI = [];
+    end
 elseif ismember('ADBitVolts', who('-file', filename)) && ~isnan(matObj.ADBitVolts)
     signal = single(signal(:)) * matObj.ADBitVolts * 1e6; % convert signal to micro volt
 elseif ismember('BlackRockUnits', who('-file', filename))
@@ -64,19 +68,15 @@ else
     end
 end
 
-if clearRemovePLI
-    matObj = matfile(filename, 'Writable', true);
-    matObj.signalRemovePLI = [];
-end
-
 if runRemovePLI
     fprintf("run removePLI on: %s\n", filename);
     tic
     signalRemovePLI = removePLI(double(signal), 1/samplingIntervalSeconds, numel(60:60:3060), [50 .2 1], [.1 4 1], 2, 60);
     toc
     signalRemovePLI = single(signalRemovePLI(:));
-    matObj = matfile(filename, 'Writable', true);
+    
     if ~clearRemovePLI
+        matObj = matfile(filename, 'Writable', true);
         matObj.signalRemovePLI = signalRemovePLI;
     end
     signal = signalRemovePLI;
