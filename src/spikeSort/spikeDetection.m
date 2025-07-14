@@ -21,6 +21,7 @@ if nargin < 7
 end
 
 saveXfDetect = false;
+clearRemovePLI = true;
 
 makeOutputPath(cscFiles, outputPath, skipExist);
 nSegments = length(timestampFiles);
@@ -75,7 +76,7 @@ parfor i = 1: size(cscFiles, 1)
             continue
         end
 
-        signal = readCSC(channelFiles{j}, runRemovePLI, true, runCAR);
+        signal = readCSC(channelFiles{j}, runRemovePLI, clearRemovePLI, runCAR);
         if isempty(signal)
             warning(sprintf('spikeDetection: error reading file: \n%s \n', channelFiles{j}));
             continue;
