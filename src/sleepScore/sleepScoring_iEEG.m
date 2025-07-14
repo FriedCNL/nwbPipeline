@@ -95,7 +95,7 @@ classdef sleepScoring_iEEG < handle
             line(get(gca,'xlim'), thSleepInclusion * fitToWin1 * ones(1,2), 'color', 'k', 'linewidth', 3);
             line(get(gca,'xlim'), thREMInclusion * fitToWin1 * ones(1,2), 'color', 'k', 'linewidth', 3);
             
-            xlabel('ms')
+            xlabel('seconds')
             ylabel('F(Hz)')
             XLIM = get(gca, 'xlim');
             YLIM = get(gca, 'ylim'); 
@@ -233,15 +233,28 @@ classdef sleepScoring_iEEG < handle
             end            
             
             sleep_score_vec = zeros(1,length(data));
-            sleep_score_vec(1:T(1)*obj.samplingRate) = pointsPassedSleepThresh(1);
-            
-            for iEpoch = 2:length(T)
+            % sleep_score_vec(1:T(1)*obj.samplingRate) = pointsPassedSleepThresh(1);
+            % 
+            % for iEpoch = 2:length(T)
+            %     if(pointsPassedSleepThresh(iEpoch))
+            %         sleep_score_vec(T(iEpoch-1)*obj.samplingRate+1:T(iEpoch)*obj.samplingRate) = obj.NREM_CODE;
+            %     elseif pointsPassedREMThresh(iEpoch)
+            %         sleep_score_vec(T(iEpoch-1)*obj.samplingRate+1:T(iEpoch)*obj.samplingRate) = obj.REM_CODE;
+            %     end
+            % end
+            %
+            % above does not account for the fact that spectrogram T returns center times 
+
+            T_ends = T + (obj.scoringEpochDuration/2);
+            sleep_score_vec(1:T_ends(1)*obj.samplingRate) = pointsPassedSleepThresh(1);
+            for iEpoch = 2:length(T_ends)
                 if(pointsPassedSleepThresh(iEpoch))
-                    sleep_score_vec(T(iEpoch-1)*obj.samplingRate+1:T(iEpoch)*obj.samplingRate) = obj.NREM_CODE;
+                    sleep_score_vec(T_ends(iEpoch-1)*obj.samplingRate+1:T_ends(iEpoch)*obj.samplingRate) = obj.NREM_CODE;
                 elseif pointsPassedREMThresh(iEpoch)
-                    sleep_score_vec(T(iEpoch-1)*obj.samplingRate+1:T(iEpoch)*obj.samplingRate) = obj.REM_CODE;
+                    sleep_score_vec(T_ends(iEpoch-1)*obj.samplingRate+1:T_ends(iEpoch)*obj.samplingRate) = obj.REM_CODE;
                 end
             end
+
             save(sleepScoreFile,'T','F','P2','sleep_score_vec','obj','P_delta','pointsPassedSleepThresh','pointsPassedREMThresh')
             
             
