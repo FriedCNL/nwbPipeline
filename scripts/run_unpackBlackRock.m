@@ -22,10 +22,10 @@ montageConfigFile =  'montage_Patient-581_exp-2_2025-05-29_14-49-24.json'; %'/Us
 %%% end run parameters %%%
 
 
-
 %% BR data extraction
 
 outFilePath = ['/Users/sldunn/HoffmanMount/data/PIPELINE_vc/ANALYSIS/' exp_name '/' pID '_' exp_name];
+
 
 % montageConfigFile = [];
 [renameMacroChannels, renameMicroChannels] = createBRChannels(montageConfigFile);
@@ -41,8 +41,8 @@ for i = 1: length(filePath)
         continue
     end
     inFile = fullfile(filePath{i}, eventFile.name);
-    outputFile = fullfile(expFilePath, "CSC_events/Events_001.mat");
-    unpackBlackRockEvent(inFile, outputFile, skipExist);
+    eventsOutputFile = fullfile(expFilePath, "CSC_events/Events_001.mat");
+    digitalTTLsFound = unpackBlackRockEvent(inFile, eventsOutputFile, skipExist);
     disp('unpack event finished!')
 
     if unpack_micro
@@ -57,6 +57,7 @@ for i = 1: length(filePath)
             unpackBlackRock(inFile, expFilePath, renameMicroChannels, skipExist);
             disp([microFile(j).name ': unpack micro channels finished!'])
         end
+
     end
 
     if unpack_analogue
@@ -70,6 +71,12 @@ for i = 1: length(filePath)
             inFile = fullfile(filePath{i}, microFile(j).name);
             unpackBlackRock(inFile, expFilePath, analogue_channels, skipExist);
             disp([microFile(j).name ': unpack analogue channels finished!'])
+        end
+        
+        if ~digitalTTLsFound
+            disp("Since no digital events were found, attempting to load TTLs from ainp1");
+            ainpFilepath = fullfile(expFilePath, "CSC_micro/ainp1_001.mat");
+            unpackBlackRockAnalogEvent(ainpFilepath, eventsOutputFile);
         end
     end
 
