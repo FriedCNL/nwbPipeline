@@ -1,3 +1,10 @@
+% Given an input unpacked NEV mat file and an output Events mat file, write TTL
+% events from the NEV file to the output file. Note TTL number data is
+% originally in NEV.Data.SerialDigitalIO.UnparsedData, but we need to clean
+% erroneous event detection and 0 (reset) TTLs values before saving them to
+% the Events file. If no digital TTLs are found (in our Goldmin setup we send TTLs
+% to an analog channel) this function returns false and creates an Events
+% mat file with empty values for TTLs and timestamps
 function digitalEventsFound = unpackBlackRockEvent(inFile, outputFile, skipExist)
 
 digitalEventsFound = true;

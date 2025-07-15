@@ -1,3 +1,7 @@
+% Given an input unpacked analog mat file and an Events mat file, writes
+% detected event timestamps to the Events file. Note that Analog events are
+% just represented as rising edges in a square wave, so all TTL values are
+% set to 1.
 function unpackBlackRockAnalogEvent(input_fname, output_fname)
     ttlCode = [];
     ts = [];
