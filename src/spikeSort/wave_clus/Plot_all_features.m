@@ -40,7 +40,8 @@ for i=1:inputs
             max_spikes = min(par.max_spikes, length(class_aux));
             inds = randsample(class_aux, max_spikes);
             % --- inside the innermost loop, replace the old plot call ---
-            colIdx = mod(k, nColors-1);              % cluster-1 → blue row
+            % colIdx = mod(k, nColors-1);              % cluster-1 → blue row
+            colIdx = mod(k-1, nColors) + 1; % cluster-1 → blue row
             plot(inspk(inds,i), inspk(inds,j), '.', ...
                  'Color', colors(colIdx,:), 'MarkerSize', 0.5);
 

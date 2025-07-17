@@ -58,10 +58,10 @@ function spikeAmplitudeDistributionUI(classes, spikeAmplitudes)
         checkboxes(i) = uicontrol('Parent', checkboxPanel, 'Style', 'checkbox', 'String', sprintf('Class %d', uniqueClasses(i)), ...
             'Position', [10, 300 - 30 * i, 100, 20], 'Value', 1);
     end
-    
+
     % set noise cluster to 0 by default
     set(checkboxes(1), 'Value', 0);
-    
+
     % Create an edit box for bin size
     uicontrol('Parent', fig, 'Style', 'text', 'String', 'Bin Size (ms):', 'Position', [180, 50, 80, 20]);
     binSizeEdit = uicontrol('Parent', fig, 'Style', 'edit', 'String', '1', 'Position', [260, 50, 60, 25]);
@@ -90,11 +90,14 @@ function spikeAmplitudeDistributionUI(classes, spikeAmplitudes)
         for i = 1:length(selectedClasses)
             % chatGPT
             classIdx     = selectedClasses(i);
-            colIdx       = mod(classIdx, nColors-1)+1;   % class-1 → blue row
+            if classIdx == 0 
+                colIdx = 1;
+            else
+                colIdx = mod(classIdx-1, nColors-1) + 2;
+            end
+            % colIdx       = mod(classIdx, nColors-1)+1;   % class-1 → blue row
             classAmps    = spikeAmplitudes(classes == classIdx);
-            
             bins = min(spikeAmplitudes):binSize:max(spikeAmplitudes)+binSize;
-
             histogram(ax, classAmps, ...
                 'BinEdges', bins, ...  %linspace(min(spikeAmplitudes), max(spikeAmplitudes), binSize)
                 'FaceColor', colors(colIdx,:), ...

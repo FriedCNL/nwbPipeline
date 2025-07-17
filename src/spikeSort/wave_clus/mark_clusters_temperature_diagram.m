@@ -75,7 +75,7 @@ switch handles.par.temp_plot
         % mark clusters
         hold on
         for i=1:length(class_plot)
-            colIdx = mod(i-1, nColors)+1; % JS added
+            colIdx = mod(i-1, nColors)+1; % JS checked
             tree_clus = tree(temp_plot(i),4+class_plot(i));
             tree_temp = tree(temp_plot(i)+1,2);
             plot(handles.temperature_plot,tree_temp,tree_clus,'.', ...

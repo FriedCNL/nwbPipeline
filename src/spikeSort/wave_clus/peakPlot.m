@@ -43,7 +43,8 @@ if ~isempty(clustersToShow)
     nColors = size(colors,1);
     %chatGPT
     for k = 1:numel(ts)
-        colIdx = mod(clustersToShow(k), nColors-1);   % cluster-1 → blue row
+        colIdx = mod(clustersToShow(k)-1, nColors) + 1; % % cluster-1 → blue row
+        % colIdx = mod(clustersToShow(k), nColors-1);   % cluster-1 → blue row
         plot(ax, ts{k}, peaks{k}, '.', ...
             'Color', colors(colIdx,:), 'MarkerSize', 8);
     end
