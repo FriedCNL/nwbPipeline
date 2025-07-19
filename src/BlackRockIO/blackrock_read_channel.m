@@ -90,7 +90,11 @@ end
 
 
 % save outFile names to csv
-writecell(outFiles(:), fullfile(fileparts(outFiles{1}), 'outFileNames.csv'));
+if strcmp(unpack_type, 'neural')
+    writecell(outFiles(:), fullfile(fileparts(outFiles{1}), 'outFileNames.csv'));
+elseif strcmp(inpack_type, 'analogue')
+    writecell(outFiles(:), fullfile(fileparts(outFiles{1}), 'outFileNamesAnalogue.csv'));   
+end
 
 % extract ouside parfor to prevent overhead warning
 channelIDs = electrode_table.ChannelID;
