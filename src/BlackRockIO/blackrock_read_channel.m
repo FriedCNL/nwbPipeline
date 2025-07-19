@@ -92,7 +92,7 @@ end
 % save outFile names to csv
 if strcmp(unpack_type, 'neural')
     writecell(outFiles(:), fullfile(fileparts(outFiles{1}), 'outFileNames.csv'));
-elseif strcmp(inpack_type, 'analogue')
+elseif strcmp(unpack_type, 'analogue')
     writecell(outFiles(:), fullfile(fileparts(outFiles{1}), 'outFileNamesAnalogue.csv'));   
 end
 
