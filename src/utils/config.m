@@ -13,6 +13,7 @@ IGNORE_FILES = {
     '^EOG.*\.ncs';
     '^Analogue1.*\.ncs';
     '^Analogue2.*\.ncs';
+    '^Analogue3.*\.ncs';
     '^Ez.*\.ncs';
     '^HR_Ref.*\.ncs';
     '^HR.ncs'
