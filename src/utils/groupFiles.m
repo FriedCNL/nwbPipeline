@@ -82,16 +82,20 @@ fileSuffix(idx) = sort(cellfun(@(x) ['_', x], fileSuffix(idx), 'UniformOutput', 
 [rowMat, colMat] = meshgrid(fileSuffix, fileGroup);
 groupFileNames = arrayfun(@(x, y) fullfile(inputPath, [y{:}, x{:}, '.ncs']), rowMat, colMat, 'UniformOutput', false);
 
-% remove file if it does not exists:
-groupFileNames = removeNonExistFile(groupFileNames);
+% remove file if it wasn't in the original list of recording filenames
+fullPathFilenames = fullfile(inputPath, filenames);
+groupFileNames = groupFileNames(ismember(groupFileNames, fullPathFilenames));
 
 if orderByCreateTime && length(fileSuffix)>1
     % we assume the temporal order of files in each channel is
     % consistent, so just check the order of the first channel and apply
     % it to the remaining channels.
     fprintf("groupFiles: order files by create time for channel: %s. \n", fileGroup{1});
-    order = orderFilesByTime(groupFileNames(1,:), REVERSE_TEMPORAL_ORDER);
-    groupFileNames = groupFileNames(:, order);
+    [nFileGroups, ~] = size(groupFileNames);
+    for fileGroupRow = 1:nFileGroups
+        order = orderFilesByTime(groupFileNames(fileGroupRow,:));
+        groupFileNames(fileGroupRow,:) = groupFileNames(fileGroupRow, order);
+    end
 elseif length(fileSuffix)>1
     warning("groupFiles: order files by file name. Make sure the order is correct by checking header of raw data! \n")
 end
@@ -146,20 +150,12 @@ files = reshape(files, r, c);
 end
 
 
-function order = orderFilesByTime(files, reverse)
-if nargin < 2
-    reverse = false;
-end
+function order = orderFilesByTime(files)
 
-createTimes = NaT(length(files), 1);
-for i = 1:length(files)
-    [~, ~, createTime, ~] = Nlx_getStartAndEndTimes(files{i});
-    createTimes(i) = createTime;
-end
-[~, order] = sort(createTimes);
+    startTimes = zeros(length(files), 1);
+        for i = 1:length(files)
+            startTimes(i) = Nlx_getFirstTimestamp(files{i});
+        end
+    [~, order] = sort(startTimes);
 
-if reverse
-    warning('groupFiles: reverse temporal order of files.')
-    order = order(length(files):-1:1);
-end
 end

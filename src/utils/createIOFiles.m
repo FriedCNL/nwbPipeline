@@ -39,13 +39,22 @@ formattedStrings = cellfun(formatString, inFileNames(:, 1), 'UniformOutput', fal
 inFileNames = inFileNames(sortOrder, :);
 
 if ~isempty(renameChannels)
-    if length(renameChannels) > size(inFileNames, 1)
-        warning('renamed channels longer than original channels')
-        renameChannels = renameChannels(1:size(inFileNames, 1));
+    %todo: replace this with in-out matching based on AD Channel #
+    channels = [];
+    unmatchedInFileIndices = [];
+    for inFileIdx = 1 : length(inFileNames)
+        currentInFilename = inFileNames{inFileIdx, 2};
+        currentInFileAD = Nlx_getADChannel(currentInFilename);
+        if isKey(renameChannels, currentInFileAD)
+            renameChannelName = renameChannels(currentInFileAD);
+            channels = [channels; renameChannelName];
+        else
+            unmatchedInFileIndices = [unmatchedInFileIndices; inFileIdx];
+        end
+    
     end
-    nonEmptyChannels = find(~cellfun(@isempty, renameChannels));
-    channels = renameChannels(nonEmptyChannels);
-    inFiles = inFileNames(nonEmptyChannels, 2:end);
+    inFiles = inFileNames(:, 2:end);
+    inFiles(unmatchedInFileIndices) = [];
 else
     channels = inFileNames(:, 1);
     inFiles = inFileNames(:, 2:end);
