@@ -117,7 +117,7 @@ eventFileNames = getNeuralynxFiles(inputPath, '.nev', ignoreFilesWithSizeBelow);
 eventFileNames = cellfun(@(x) fullfile(inputPath, x), eventFileNames, 'UniformOutput', false);
 if length(eventFileNames) > 1
     fprintf("groupFiles: order event files by create time. \n");
-    order = orderFilesByTime(eventFileNames);
+    order = orderFilesByTime(eventFileNames, 1);
     eventFileNames = eventFileNames(order);
 end
 
@@ -159,12 +159,14 @@ files = reshape(files, r, c);
 end
 
 
-function order = orderFilesByTime(files)
-
+function order = orderFilesByTime(files, isEvents)
+    if nargin < 2
+        isEvents = 0;
+    end
     startTimes = zeros(length(files), 1);
     for i = 1:length(files)
         if ~isempty(files{i})
-            startTimes(i) = Nlx_getFirstTimestamp(files{i});
+            startTimes(i) = Nlx_getFirstTimestamp(files{i}, isEvents);
         else
             startTimes(i) = intmax('uint64');
         end
