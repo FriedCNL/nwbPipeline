@@ -42,7 +42,8 @@ if ~isempty(renameChannels)
     %todo: replace this with in-out matching based on AD Channel #
     channels = [];
     unmatchedInFileIndices = [];
-    for inFileIdx = 1 : length(inFileNames)
+    [numInFileGroups, ~] = size(inFileNames)
+    for inFileIdx = 1 : numInFileGroups
         currentInFilename = inFileNames{inFileIdx, 2};
         currentInFileAD = Nlx_getADChannel(currentInFilename);
         if isKey(renameChannels, currentInFileAD)
@@ -54,7 +55,7 @@ if ~isempty(renameChannels)
     
     end
     inFiles = inFileNames(:, 2:end);
-    inFiles(unmatchedInFileIndices) = [];
+    inFiles(unmatchedInFileIndices, :) = [];
 else
     channels = inFileNames(:, 1);
     inFiles = inFileNames(:, 2:end);
