@@ -9,6 +9,8 @@ IGNORE_FILES = {
     '^A2.*\.ncs';
     '^C3.*\.ncs';
     '^C4.*\.ncs';
+    '^F3.*\.ncs';
+    '^F4.*\.ncs';
     '^EMG.*\.ncs';
     '^EOG.*\.ncs';
     '^Analogue1.*\.ncs';

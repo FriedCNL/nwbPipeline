@@ -82,16 +82,29 @@ fileSuffix(idx) = sort(cellfun(@(x) ['_', x], fileSuffix(idx), 'UniformOutput', 
 [rowMat, colMat] = meshgrid(fileSuffix, fileGroup);
 groupFileNames = arrayfun(@(x, y) fullfile(inputPath, [y{:}, x{:}, '.ncs']), rowMat, colMat, 'UniformOutput', false);
 
-% remove file if it does not exists:
-groupFileNames = removeNonExistFile(groupFileNames);
+% remove file if it wasn't in the original list of recording filenames
+fullPathFilenames = fullfile(inputPath, filenames);
+[groupFileRows,groupFileCols] = size(groupFileNames);
+for groupFileRowIndex = 1:groupFileRows
+    for groupFileColIndex = 1:groupFileCols
+        if ~ismember(groupFileNames{groupFileRowIndex, groupFileColIndex}, fullPathFilenames)
+            groupFileNames{groupFileRowIndex, groupFileColIndex} = [];
+        end
+    end
+end
+
+%groupFileNames = groupFileNames(ismember(groupFileNames, fullPathFilenames));
 
 if orderByCreateTime && length(fileSuffix)>1
-    % we assume the temporal order of files in each channel is
-    % consistent, so just check the order of the first channel and apply
-    % it to the remaining channels.
-    fprintf("groupFiles: order files by create time for channel: %s. \n", fileGroup{1});
-    order = orderFilesByTime(groupFileNames(1,:), REVERSE_TEMPORAL_ORDER);
-    groupFileNames = groupFileNames(:, order);
+    % we no longer assume the temporal order of files in each channel is
+    % consistent, so check the order of each channel and apply
+    % it to its appropriate channel row.
+    [nFileGroups, ~] = size(groupFileNames);
+    for fileGroupRow = 1:nFileGroups
+        fprintf("groupFiles: order files by create time for channel: %s. \n", fileGroup{fileGroupRow});
+        order = orderFilesByTime(groupFileNames(fileGroupRow,:));
+        groupFileNames(fileGroupRow,:) = groupFileNames(fileGroupRow, order);
+    end
 elseif length(fileSuffix)>1
     warning("groupFiles: order files by file name. Make sure the order is correct by checking header of raw data! \n")
 end
@@ -104,7 +117,7 @@ eventFileNames = getNeuralynxFiles(inputPath, '.nev', ignoreFilesWithSizeBelow);
 eventFileNames = cellfun(@(x) fullfile(inputPath, x), eventFileNames, 'UniformOutput', false);
 if length(eventFileNames) > 1
     fprintf("groupFiles: order event files by create time. \n");
-    order = orderFilesByTime(eventFileNames);
+    order = orderFilesByTime(eventFileNames, 1);
     eventFileNames = eventFileNames(order);
 end
 
@@ -146,20 +159,19 @@ files = reshape(files, r, c);
 end
 
 
-function order = orderFilesByTime(files, reverse)
-if nargin < 2
-    reverse = false;
-end
+function order = orderFilesByTime(files, isEvents)
+    if nargin < 2
+        isEvents = 0;
+    end
+    startTimes = zeros(length(files), 1);
+    for i = 1:length(files)
+        if ~isempty(files{i})
+            startTimes(i) = Nlx_getFirstTimestamp(files{i}, isEvents);
+        else
+            startTimes(i) = intmax('uint64');
+        end
+    
+    end
+    [~, order] = sort(startTimes);
 
-createTimes = NaT(length(files), 1);
-for i = 1:length(files)
-    [~, ~, createTime, ~] = Nlx_getStartAndEndTimes(files{i});
-    createTimes(i) = createTime;
-end
-[~, order] = sort(createTimes);
-
-if reverse
-    warning('groupFiles: reverse temporal order of files.')
-    order = order(length(files):-1:1);
-end
 end
