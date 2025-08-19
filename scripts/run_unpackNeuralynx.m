@@ -25,8 +25,8 @@ microPattern = unpackConfig.microPattern;
 eventPattern = unpackConfig.eventPattern;
 montageConfigFile = unpackConfig.montageConfigFile;
 skipExist = unpackConfig.skipExist;
-%numParallelTasks = unpackConfig.numParallelTasks;
-numParallelTasks = 8;
+numParallelTasks = unpackConfig.numParallelTasks;
+%numParallelTasks = 8;
 
 if ~isempty(numParallelTasks)
     delete(gcp('nocreate'))
