@@ -25,14 +25,17 @@ microPattern = unpackConfig.microPattern;
 eventPattern = unpackConfig.eventPattern;
 montageConfigFile = unpackConfig.montageConfigFile;
 skipExist = unpackConfig.skipExist;
-numParallelTasks = unpackConfig.numParallelTasks;
+%numParallelTasks = unpackConfig.numParallelTasks;
+numParallelTasks = 8;
 
 if ~isempty(numParallelTasks)
     delete(gcp('nocreate'))
     parpool(numParallelTasks);
 end
 
-[renameMacroChannels, renameMicroChannels] = createChannels(montageConfigFile);
+[renameMacroChannels, renameMicroChannels] = getADChannelMap(montageConfigFile);
+
+
 
 for i = 1:length(expIds)
 
