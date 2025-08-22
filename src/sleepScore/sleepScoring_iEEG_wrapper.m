@@ -20,7 +20,7 @@ for i = 1:size(macroFiles, 1)
     sleepScore_obj.useClustering_for_scoring = 1;
 
     if manualValidation
-        manualValidationSleepScoring(data, LocalHeader, outputPath);
+        manualValidationSleepScoring(sleepScore_obj, data, LocalHeader, outputPath);
     else
         [sleep_score_vec] = evaluateDelta(sleepScore_obj, data, LocalHeader, outputPath);
     end
