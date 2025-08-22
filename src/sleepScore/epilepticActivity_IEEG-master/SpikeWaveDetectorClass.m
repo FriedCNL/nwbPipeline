@@ -3,7 +3,7 @@ classdef SpikeWaveDetectorClass < handle
     properties
         
         %general constants
-        samplingRate = 2000;
+        samplingRate = 1000;
         minDistSpikes = 50; % minimal distance for 'different' spikes - in miliseconds
         
         %plotting constants
@@ -20,13 +20,11 @@ classdef SpikeWaveDetectorClass < handle
         SDthresholdConjAmp = 5; %threshold in standard deviations for the amplitude for the conjunction of amp&grad condition
         SDthresholdConjGrad = 5; %threshold in standard deviations for the gradient for the conjunction of amp&grad condition
         SDthresholdConjEnv = 5; %threshold in standard deviations for the HP for the conjunction of amp&HP condition
-
         useEnv = true;
         useAmp = false;
         useGrad = false;
         useConjAmpGrad = true;
         useConjAmpEnv = false;
-
         isDisjunction = false;
         blockSizeSec = 30; % filter and find peaks at blocks of X seconds - based on Andrillon et al
         
