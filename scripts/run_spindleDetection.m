@@ -1,8 +1,4 @@
-%the struct runData holds data about patients and where the different event
-%types are stored
 clear
-% ---- UPDATE this part -
-
 
 % the main path for extracted data here -
 macroPath = '/Users/sldunn/HoffmanMount/data/PIPELINE_vc/ANALYSIS/MovieParadigm/570_MovieParadigm/Experiment-5/CSC_macro';
@@ -39,7 +35,6 @@ sleepScoring = [];
 sd = SpindleDetectorClass;
 returnStats = 1;
 sd.samplingRate = 2000;
-
 
 isVerified = sd.verifyChannelStep1(currData,sleepScoring,peakTimes);
 [spindleTimes,spindleStats,spindlesStartEndTimes] = sd.detectSpindles(currData, sleepScoring, peakTimes, returnStats);
