@@ -3,89 +3,51 @@
 clear
 % ---- UPDATE this part -
 
-% IDE detection
-IIS_det = SpikeWaveDetectorClass;
 
 % the main path for extracted data here -
-% for the given example, it's in the same folder as this code:
+macroPath = '/Users/sldunn/HoffmanMount/data/PIPELINE_vc/ANALYSIS/MovieParadigm/570_MovieParadigm/Experiment-5/CSC_macro';
+[macroFiles, macroTimestampFiles] = readCSCFilePath(macroPath);
+outputPath = fullfile(fileparts(macroPath), 'spindle_detection');
 
-base_path = 'F:\566\Experiment-8';
-data_p_path = fullfile(base_path, 'CSC_macro');
-outputFolder = fullfile(base_path, 'Spindles');
-
-if ~exist(outputFolder, "dir")
-    mkdir(outputFolder);
+if ~exist(outputPath, "dir")
+    mkdir(outputPath);
 end
 
-sleepScoringFileName = fullfile(base_path, 'sleep_score/sleepScore_LAC4_001.mat');
+% choose 2 consecutive channels from the same electrode
+channel_index = [17,18];
 
-[macroFiles, macroTimestampFiles] = readCSCFilePath(data_p_path);
+% load data, bipolar re-reference
+currData1 = combineCSC(macroFiles(channel_index(1), :), macroTimestampFiles);
+currData2 = combineCSC(macroFiles(channel_index(2), :), macroTimestampFiles);
 
-% channel_index1 = 37;
-% channel_index2 = 38;
+currData = double(currData2) - double(currData1);
+currData = transpose(currData);
+
+clear currData1 currData2
 
 
-%% an example for detecting spindles directly using SpindleDetectorClass (it's the same thing the wrapper below does in batch)
+% IED detection
+IIS_det = SpikeWaveDetectorClass;
+IIS_det.samplingRate = 2000;
 
+[peakTimes, passedConditions]= detectTimes(IIS_det, currData,true);
 
-%loading - sleep scoring, IIS, data
-% sleepScoring = load(sleepScoringFileName);
-% sleepScoring = sleepScoring.sleep_score_vec;
+% set sleepScoring to empty for simplicity
 sleepScoring = [];
 
-%% load or perform interictal Spikes Detection
+%detecting the spindles
+sd = SpindleDetectorClass;
+returnStats = 1;
+sd.samplingRate = 2000;
 
-[numElectrodes, ~] = size(macroFiles);
-for iElectrode = 2:numElectrodes
-    bipolar_channel1 = iElectrode - 1;
-    bipolar_channel2 = iElectrode;
-    
-    % peakTimes = [];
-    channelName = extractChannelName(macroFiles{bipolar_channel1, 1});
-    channelName2 = extractChannelName(macroFiles{bipolar_channel2, 1});
 
-    nonNumPart1 = regexp(channelName, '^[A-Za-z]+', 'match', 'once'); % Extract letters
-    nonNumPart2 = regexp(channelName2, '^[A-Za-z]+', 'match', 'once'); % Extract letters
-
-    % If non-numeric parts are different, skip this iteration
-    if ~strcmp(nonNumPart1, nonNumPart2)
-        continue;
-    end
-    
-    currData1 = combineCSC(macroFiles(bipolar_channel1, :), macroTimestampFiles);
-    currData2 = combineCSC(macroFiles(bipolar_channel2, :), macroTimestampFiles);
-    
-    % bipolar referencing
-    currData = currData1 - currData2;
-    clear currData1 currData2;
-    
-    % yyding test
-    [peakTimes, peakStats]= detectTimes(IIS_det, double(currData.'), true);
-    if isempty(peakTimes)
-        continue;
-    end
-
-    %% detect the spindles
-    returnStats = 1;
-    sd = SpindleDetectorClass;
-    sd.spindleRangeMin = 11;
-    sd.samplingRate = 2000;
-    % [spindlesTimes,spindleStats,spindlesStartEndTimes] = sd.detectSpindles(currData, sleepScoring, peakTimes, returnStats);
-    
-    % savePath = fullfile(outputFolder, sprintf('spindles_%s.mat', channelName));
-    % matObj = matfile(savePath, "Writable", true);
-    % matObj.spindlesTimes = spindlesTimes;
-    % matObj.spindleStats = spindleStats;
-    % matObj.spindlesStartEndTimes = spindlesStartEndTimes;
-end
-
+isVerified = sd.verifyChannelStep1(currData,sleepScoring,peakTimes);
+[spindleTimes,spindleStats,spindlesStartEndTimes] = sd.detectSpindles(currData, sleepScoring, peakTimes, returnStats);
+isVerified2 = sd.verifyChannelStep3(currData,spindleTimes);
 
 %plotting the single spindles and saving the figures
-%sd.plotSpindlesSimple(currData, spindlesTimes, outputFolder)
+sd.plotSpindlesSimple(currData, spindleTimes, outputFolder)
 
 % scroll through spindles and their spectrograms using any key
-%blockSize = 4;
-% sd.plotSpindles(currData,spindlesTimes,blockSize);
-
-
-
+blockSize = 4;
+sd.plotSpindles(currData,spindleTimes,blockSize);
