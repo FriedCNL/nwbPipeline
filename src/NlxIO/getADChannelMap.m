@@ -57,7 +57,7 @@ function [macroChannelMap, microChannelMap] = getADChannelMap(montageConfigFile)
             microBundleName = currentMicroBundleInfo.BrainLabel;
     
             for microIdx = 1 : numMicrosInBundle
-                currentMicroName = {[currentBankName, num2str(portIdx), '-', microBundleName, num2str(microIdx)]};
+                currentMicroName = {[currentBankName, replace(currentPortName, 'Port', ''), '-', microBundleName, num2str(microIdx)]};
                 currentMicroADChannel = currentMicroAD + (microIdx - 1);
                 numMicrosAdded = numMicrosAdded + 1;
                 microChannelsList(numMicrosAdded) = currentMicroName;
