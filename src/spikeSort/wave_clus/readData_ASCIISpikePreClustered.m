@@ -47,6 +47,12 @@ if ismember('clu', spikeFileVars) && ismember('tree', spikeFileVars)
     if ismember('ipermut', timesFileVars)
         ipermut = timesFileObj.ipermut;
     end
+elseif ismember('clu', timesFileVars) && ismember('tree', timesFileVars)
+    clu = timesFileObj.clu;
+    tree = timesFileObj.tree;
+    if ismember('ipermut', timesFileVars)
+        ipermut = timesFileObj.ipermut;
+    end
 else
     par.inputs = size(timesFileObj.inspk, 2);
     ipermut = getInspkAux(par, timesFileObj.inspk);
