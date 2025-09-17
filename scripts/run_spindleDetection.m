@@ -9,6 +9,12 @@ if ~exist(outputPath, "dir")
     mkdir(outputPath);
 end
 
+% in the MGS 2023 paper I don't think there was bipolar re-ref for spindle
+% detection.
+% However Staresina 2023 compares sleep event detection with different
+% re-ref schemes (bipolar, WM, uni) and shows little difference in
+% detection rates. They use bipolar re-ref for main results.
+
 % choose 2 consecutive channels from the same electrode
 channel_index = [17,18];
 
