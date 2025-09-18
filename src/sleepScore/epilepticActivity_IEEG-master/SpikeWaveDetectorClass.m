@@ -166,6 +166,8 @@ classdef SpikeWaveDetectorClass < handle
                     else
                         pointsPassedThreshAmplitude = true(1,nCurrBlock);
                     end
+                    zsAmp = nan(1,nCurrBlock);
+                    pointsPassedThreshAmplitudeLowThresh = false(1,nCurrBlock);
                 end
                 
                 % gradient
@@ -180,6 +182,8 @@ classdef SpikeWaveDetectorClass < handle
                     else
                         pointsPassedThreshGradient = true(1,nCurrBlock);
                     end
+                    zsGrad = nan(1,nCurrBlock);
+                    pointsPassedThreshGradientLowThresh = false(1,nCurrBlock);
                 end
                 
                 
@@ -200,6 +204,8 @@ classdef SpikeWaveDetectorClass < handle
                     else
                         pointsPassedThreshEnv = true(1,nCurrBlock);
                     end
+                    zsEnv = nan(1,nCurrBlock);
+                    pointsPassedThreshEnvLowThresh = false(1,nCurrBlock);
                 end
                 
                 % conjunction of amplitude & gradient with lower thresholds
@@ -254,7 +260,11 @@ classdef SpikeWaveDetectorClass < handle
                                     ~isempty(strfind(pointsPassedThreshAmplitude(allPeakInds{iPeak}),seqToFind)) ~isempty(strfind(pointsPassedThreshGradient(allPeakInds{iPeak}),seqToFind)) ...
                                     ~isempty(strfind(pointsPassedThreshAmpGradLowThresh(allPeakInds{iPeak}),seqToFind)) ~isempty(strfind(pointsPassedThreshAmpEnvLowThresh(allPeakInds{iPeak}),seqToFind))];
                             end
-                            currZscoresPerPeaksMax = [currZscoresPerPeaksMax; max(zsEnv(allPeakInds{iPeak})) max(zsGrad(allPeakInds{iPeak})) max(zsAmp(allPeakInds{iPeak}))];
+                            % currZscoresPerPeaksMax = [currZscoresPerPeaksMax; max(zsEnv(allPeakInds{iPeak})) max(zsGrad(allPeakInds{iPeak})) max(zsAmp(allPeakInds{iPeak}))];
+                            currZscoresPerPeaksMax = [currZscoresPerPeaksMax; ...
+                                                        max(zsEnv(allPeakInds{iPeak}), [], 'omitnan'), ...
+                                                        max(zsGrad(allPeakInds{iPeak}), [], 'omitnan'), ...
+                                                        max(zsAmp(allPeakInds{iPeak}),  [], 'omitnan')];
                             currIndsPerPeak{iPeak} = allPeakInds{iPeak};
                             currZscoresPerPeaksEnv{iPeak} = zsEnv(allPeakInds{iPeak});
                             currZscoresPerPeaksAmp{iPeak} = zsAmp(allPeakInds{iPeak});
