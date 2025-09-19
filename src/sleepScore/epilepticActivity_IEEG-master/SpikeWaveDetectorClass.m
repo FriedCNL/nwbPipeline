@@ -3,7 +3,7 @@ classdef SpikeWaveDetectorClass < handle
     properties
         
         %general constants
-        samplingRate = 2000;
+        samplingRate = 1000;
         minDistSpikes = 50; % minimal distance for 'different' spikes - in miliseconds
         
         %plotting constants
@@ -20,13 +20,11 @@ classdef SpikeWaveDetectorClass < handle
         SDthresholdConjAmp = 5; %threshold in standard deviations for the amplitude for the conjunction of amp&grad condition
         SDthresholdConjGrad = 5; %threshold in standard deviations for the gradient for the conjunction of amp&grad condition
         SDthresholdConjEnv = 5; %threshold in standard deviations for the HP for the conjunction of amp&HP condition
-
         useEnv = true;
         useAmp = false;
         useGrad = false;
         useConjAmpGrad = true;
         useConjAmpEnv = false;
-
         isDisjunction = false;
         blockSizeSec = 30; % filter and find peaks at blocks of X seconds - based on Andrillon et al
         
@@ -168,6 +166,8 @@ classdef SpikeWaveDetectorClass < handle
                     else
                         pointsPassedThreshAmplitude = true(1,nCurrBlock);
                     end
+                    zsAmp = nan(1,nCurrBlock);
+                    pointsPassedThreshAmplitudeLowThresh = false(1,nCurrBlock);
                 end
                 
                 % gradient
@@ -182,6 +182,8 @@ classdef SpikeWaveDetectorClass < handle
                     else
                         pointsPassedThreshGradient = true(1,nCurrBlock);
                     end
+                    zsGrad = nan(1,nCurrBlock);
+                    pointsPassedThreshGradientLowThresh = false(1,nCurrBlock);
                 end
                 
                 
@@ -202,6 +204,8 @@ classdef SpikeWaveDetectorClass < handle
                     else
                         pointsPassedThreshEnv = true(1,nCurrBlock);
                     end
+                    zsEnv = nan(1,nCurrBlock);
+                    pointsPassedThreshEnvLowThresh = false(1,nCurrBlock);
                 end
                 
                 % conjunction of amplitude & gradient with lower thresholds
@@ -256,7 +260,11 @@ classdef SpikeWaveDetectorClass < handle
                                     ~isempty(strfind(pointsPassedThreshAmplitude(allPeakInds{iPeak}),seqToFind)) ~isempty(strfind(pointsPassedThreshGradient(allPeakInds{iPeak}),seqToFind)) ...
                                     ~isempty(strfind(pointsPassedThreshAmpGradLowThresh(allPeakInds{iPeak}),seqToFind)) ~isempty(strfind(pointsPassedThreshAmpEnvLowThresh(allPeakInds{iPeak}),seqToFind))];
                             end
-                            currZscoresPerPeaksMax = [currZscoresPerPeaksMax; max(zsEnv(allPeakInds{iPeak})) max(zsGrad(allPeakInds{iPeak})) max(zsAmp(allPeakInds{iPeak}))];
+                            % currZscoresPerPeaksMax = [currZscoresPerPeaksMax; max(zsEnv(allPeakInds{iPeak})) max(zsGrad(allPeakInds{iPeak})) max(zsAmp(allPeakInds{iPeak}))];
+                            currZscoresPerPeaksMax = [currZscoresPerPeaksMax; ...
+                                                        max(zsEnv(allPeakInds{iPeak}), [], 'omitnan'), ...
+                                                        max(zsGrad(allPeakInds{iPeak}), [], 'omitnan'), ...
+                                                        max(zsAmp(allPeakInds{iPeak}),  [], 'omitnan')];
                             currIndsPerPeak{iPeak} = allPeakInds{iPeak};
                             currZscoresPerPeaksEnv{iPeak} = zsEnv(allPeakInds{iPeak});
                             currZscoresPerPeaksAmp{iPeak} = zsAmp(allPeakInds{iPeak});

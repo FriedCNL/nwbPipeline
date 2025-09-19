@@ -3,17 +3,11 @@ clear
 % the main path for extracted data here -
 macroPath = '/Users/sldunn/HoffmanMount/data/PIPELINE_vc/ANALYSIS/MovieParadigm/570_MovieParadigm/Experiment-5/CSC_macro';
 [macroFiles, macroTimestampFiles] = readCSCFilePath(macroPath);
-outputPath = fullfile(fileparts(macroPath), 'spindle_detection');
+outputFigureFolder = fullfile(fileparts(macroPath), 'ripple_detection');
 
 if ~exist(outputPath, "dir")
     mkdir(outputPath);
 end
-
-% in the MGS 2023 paper I don't think there was bipolar re-ref for spindle
-% detection.
-% However Staresina 2023 compares sleep event detection with different
-% re-ref schemes (bipolar, WM, uni) and shows little difference in
-% detection rates. They use bipolar re-ref for main results.
 
 % choose 2 consecutive channels from the same electrode
 channel_index = [17,18];
@@ -38,17 +32,11 @@ IIS_det.samplingRate = 2000;
 sleepScoring = [];
 
 %detecting the spindles
-sd = SpindleDetectorClass;
-returnStats = 1;
-sd.samplingRate = 2000;
+rd = RippleDetector_class;
+rd.samplingRate = 2000;
 
-isVerified = sd.verifyChannelStep1(currData,sleepScoring,peakTimes);
-[spindleTimes,spindleStats,spindlesStartEndTimes] = sd.detectSpindles(currData, sleepScoring, peakTimes, returnStats);
-isVerified2 = sd.verifyChannelStep3(currData,spindleTimes);
+[ripplesTimes, ripplesStartEnd] = rd.detectRipple(currData, sleepScoring, peakTimes);
 
-%plotting the single spindles and saving the figures
-sd.plotSpindlesSimple(currData, spindleTimes, outputFolder)
 
-% scroll through spindles and their spectrograms using any key
-blockSize = 4;
-sd.plotSpindles(currData,spindleTimes,blockSize);
+% plot ripples and save to output folder
+% rd.plotRipples(currData,ripplesTimes,outputFigureFolder);
