@@ -32,11 +32,15 @@ parfor i = 1: numBundles
         signal = readCSC(bundleMicroFiles{1}, runRemovePLI, true);
         cscLength = length(signal);
         bundleMicroCSC = nan(channelsPerBundle, cscLength);
-        bundleMicroCSC(1, :) = signal(:)';
+        if not(all(signal==0))
+            bundleMicroCSC(1, :) = signal(:)';
+        end
 
         for k = 2:channelsPerBundle
             signal = readCSC(bundleMicroFiles{k}, runRemovePLI, true);
-            bundleMicroCSC(k, :) = signal(:)';
+            if not(all(signal==0)) % to account for empty files eg 1789 exp101 LSMG8_003/4
+                bundleMicroCSC(k, :) = signal(:)';
+            end
         end
         
         bundleMedian = single(nanmedian(bundleMicroCSC, 1));
