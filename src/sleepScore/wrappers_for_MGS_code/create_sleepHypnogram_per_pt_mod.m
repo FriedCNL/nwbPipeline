@@ -1,4 +1,4 @@
-function create_sleepHypnogram_per_pt(macroFiles, macroTimestampFiles, outputPath, skipExist)
+function create_sleepHypnogram_per_pt_mod(macroFiles, macroTimestampFiles, outputPath, skipExist)
 
 if ~exist('skipExist','var')
     skipExist = 1;
@@ -26,7 +26,7 @@ parfor i = 1:size(macroFiles, 1)
     end
 
     data = combineCSC(macroFiles(i, :), macroTimestampFiles);
-    plotHypnogram_perChannel(data, 2000, figureName)
+    plotHypnogram_perChannel_mod(data, 2000, figureName)
     fprintf('done.\n');
     % PrintActiveFigs(outputPath);
 
