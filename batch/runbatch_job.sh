@@ -65,6 +65,14 @@ expIds="[3]"
 runRemovePLI="0"
 runCAR="1"
 runSpikeReject="1"
+
+# stimulation artifact rejection parameters
+runStimulationArtifactRemoval="0"
+stimulationArtifactPreRemovalTimeSecs="0.05"
+stimulationArtifactPostRemovalTimeSecs="0.3"
+stimTTL="1";
+stimulationArtifactParams.eventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', expIds), '/CSC_events']);
+
 # if expIds is updated, do not skipExist any steps so that threshold for spike detection is same across experiments
 skipExist="[0, 0, 0]"  # [spike detection, spike code, spike clustering]
 mode="spikeSorting"  # Change to "extractLFP" to run extractLFP
@@ -104,10 +112,17 @@ matlab  -nosplash -nodisplay <<EOF
     workingDir = getDirectory();
     filePath = fullfile(workingDir, '${expName}/${patientId}_${expName}');
 
+    runStimulationArtifactRemoval = ${runStimulationArtifactRemoval};
+    stimulationArtifactParams = struct;
+    stimulationArtifactParams.preRemovalTimeSecs = ${stimulationArtifactPreRemovalTimeSecs};
+    stimulationArtifactParams.postRemovalTimeSecs = ${stimulationArtifactPostRemovalTimeSecs};
+    stimulationArtifactParams.stimTTL = ${stimTTL};
+    stimulationArtifactParams.eventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', expIds), '/CSC_events']);
+
     maxNumCompThreads($maxThreads);
     if strcmp('${mode}', 'spikeSorting')
         disp("run spike sorting");
-        batch_spikeSorting($SGE_TASK_ID, $total_tasks, expIds, filePath, skipExist, runRemovePLI, runCAR, runSpikeReject);
+        batch_spikeSorting($SGE_TASK_ID, $total_tasks, expIds, filePath, skipExist, runRemovePLI, runCAR, runSpikeReject, runStimulationArtifactRemoval, stimulationArtifactParams);
     elseif strcmp('${mode}', 'extractLFP')
         disp("run extract LFP");
         batch_extractLFP($SGE_TASK_ID, $total_tasks, expIds, filePath, skipExist);

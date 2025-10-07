@@ -1,4 +1,4 @@
-function [spikeThresh, param] = getDetectionThresh(channelFiles, runRemovePLI)
+function [spikeThresh, param] = getDetectionThresh(channelFiles, runRemovePLI, runStimulationArtifactRemoval, stimulationArtifactParams, timestampFiles)
 % Does the first few steps of spike detection to find the threshold. This
 % allows for using the same threshold across multiple sessions. Returns
 % thr, as well as a struct with other variables created so that these steps
@@ -6,6 +6,9 @@ function [spikeThresh, param] = getDetectionThresh(channelFiles, runRemovePLI)
 
     if nargin < 2
         runRemovePLI = false;
+    end
+    if nargin < 3
+        runStimulationArtifactRemoval = false;
     end
 
     param = set_parameters();
@@ -25,6 +28,13 @@ function [spikeThresh, param] = getDetectionThresh(channelFiles, runRemovePLI)
         % assume same sampling interval across channels.
         fprintf("getDetectionThresh: sampling frequency: %d\n", 1/samplingInterval)
         param.sr = 1/samplingInterval;
+        
+        if runStimulationArtifactRemoval
+            [timestamps, ~] = readTimestamps(timestampFiles{i});
+            stimRemovedSignal = removeStimulationArtifacts(signal, timestamps, stimulationArtifactParams);
+            x = stimRemovedSignal;
+        end
+
 
         [~, ~, noise_std_detect(i), noise_std_sorted(i), thr(i), thrmax(i)] = highPassFilter(x, param);
         x = [];

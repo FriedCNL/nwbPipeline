@@ -1,4 +1,4 @@
-function outputFiles = spikeDetection(cscFiles, timestampFiles, outputPath, experimentName, skipExist, runRemovePLI, runCAR)
+function outputFiles = spikeDetection(cscFiles, timestampFiles, outputPath, experimentName, skipExist, runRemovePLI, runCAR, runStimulationArtifactRemoval, stimulationArtifactParams)
 %spikeDetection Summary of this function goes here
 %   cscFiles cell(m, n). m: number of channels. n: number of files in each
 %   channel. spikes detected from file in each row will be combined.
@@ -20,6 +20,11 @@ if nargin < 7
     runCAR = true;
 end
 
+if nargin < 8
+    runStimulationArtifactRemoval = false;
+    stimulationArtifactParams = struct;
+end
+
 saveXfDetect = false;
 clearRemovePLI = true;
 
@@ -27,8 +32,27 @@ makeOutputPath(cscFiles, outputPath, skipExist);
 nSegments = length(timestampFiles);
 outputFiles = cell(1, size(cscFiles, 1));
 
-parfor i = 1: size(cscFiles, 1)
+% Load start and end timestamps for all stim artifacts if we are doing stim
+% artifact removal
+if runStimulationArtifactRemoval
+    eventsFiles = dir(fullfile([stimulationArtifactParams.eventsDir '/Events*.mat']));
 
+    fullEventsTimestamps = [];
+    fullEventsTTLs = [];
+    for eventIdx = 1:length(eventsFiles)
+        eventsFile = fullfile([eventsFiles(eventIdx).folder '/'  eventsFiles(eventIdx).name]);
+        eventsLoad = load(eventsFile);
+        fullEventsTimestamps = [fullEventsTimestamps eventsLoad.timestamps];
+        fullEventsTTLs = [fullEventsTTLs eventsLoad.TTLs];
+
+    end
+
+    stimArtifactStartTimestamps = fullEventsTimestamps(fullEventsTTLs == stimulationArtifactParams.stimTTL);
+    stimulationArtifactParams.stimArtifactEndTimestamps = stimArtifactStartTimestamps + stimulationArtifactParams.postRemovalTimeSecs;
+    stimulationArtifactParams.stimArtifactStartTimestamps = stimArtifactStartTimestamps - stimulationArtifactParams.preRemovalTimeSecs;
+end
+
+parfor i = size(cscFiles, 1)
     channelFiles = cscFiles(i,:);
 
     if all(cellfun(@(x)~exist(x, "file"), cscFiles(i, :)))
@@ -90,6 +114,12 @@ parfor i = 1: size(cscFiles, 1)
         elseif timestampsStart > timestamps(1)
             warning('spikeDetection: timestamp files not correctly ordered!');
             fprintf('%s\n', timestampFiles);
+        end
+
+        % Perform stimulus artifact removal
+        if runStimulationArtifactRemoval
+            stimRemovedSignal = removeStimulationArtifacts(signal, timestamps, stimulationArtifactParams);
+            signal = stimRemovedSignal;
         end
 
         % duration includes gaps between experiments, which is necessary
@@ -175,3 +205,5 @@ function catchErr(tempSpikeFilename, spikeFilename, ME)
     warning(sprintf('spikeDetection: error writing file %s\n:', spikeFilename))
     fprintf('Error message: %s\n', ME.message);
 end
+
+
