@@ -71,7 +71,6 @@ runStimulationArtifactRemoval="0"
 stimulationArtifactPreRemovalTimeSecs="0.05"
 stimulationArtifactPostRemovalTimeSecs="0.3"
 stimTTL="1";
-stimulationArtifactParams.eventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', expIds), '/CSC_events']);
 
 # if expIds is updated, do not skipExist any steps so that threshold for spike detection is same across experiments
 skipExist="[0, 0, 0]"  # [spike detection, spike code, spike clustering]
