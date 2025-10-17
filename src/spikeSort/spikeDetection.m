@@ -52,7 +52,7 @@ if runStimulationArtifactRemoval
     stimulationArtifactParams.stimArtifactStartTimestamps = stimArtifactStartTimestamps - stimulationArtifactParams.preRemovalTimeSecs;
 end
 
-parfor i = size(cscFiles, 1)
+parfor i = 1:size(cscFiles, 1)
     channelFiles = cscFiles(i,:);
 
     if all(cellfun(@(x)~exist(x, "file"), cscFiles(i, :)))
