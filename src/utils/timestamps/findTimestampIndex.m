@@ -1,4 +1,5 @@
 function timestampIndex = findTimestampIndex(timestampVal,timestampArr, timestampDiffEps, startIdx, endIdx)
+    
     if isempty(timestampArr)
         timestampIndex = -3;
         return;
@@ -27,6 +28,11 @@ function timestampIndex = findTimestampIndex(timestampVal,timestampArr, timestam
         return;
     end   
     
+    if (endIdx - startIdx) < 2
+        timestampIndex = endIdx;
+        return;
+    end
+
     midpt = floor((startIdx + endIdx) / 2);
     if (timestampArr(midpt) - timestampVal) <  timestampDiffEps
         timestampIndex = findTimestampIndex(timestampVal,timestampArr, timestampDiffEps, midpt, endIdx);
