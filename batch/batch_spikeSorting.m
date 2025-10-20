@@ -26,6 +26,7 @@ function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist,
         runStimulationArtifactRemoval = false;
         stimulationArtifactParams = struct;
     end
+    stimulationArtifactParams.runStimulationArtifactRemoval = runStimulationArtifactRemoval;
 
     if ~exist('runSpikeReject', 'var')
         runSpikeReject = true;
@@ -70,6 +71,12 @@ function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist,
 
     expFilePath = [filePath, '/Experiment', sprintf('-%d', expIds)];
     outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d_removeStimulationArtifacts-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject), int8(runStimulationArtifactRemoval)));
+
+    jsonStimParams = jsonencode(stimulationArtifactParams, PrettyPrint=true);
+    jsonStimFname = [expFilePath, '/stim_artifact_removal_params.json'];
+    jsonStimFID = fopen(jsonStimFname,'w');
+    fprintf(jsonStimFID, jsonStimParams);
+    fclose(jsonStimFID);
 
     fprintf('run spike detection in parallel on %d (out of %d) threads...\n', parJobs, maxNumCompThreads);
     spikeFiles = spikeDetection(microFiles, timestampFiles, outputPath, expNames, skipExist(1), runRemovePLI, runCAR, runStimulationArtifactRemoval, stimulationArtifactParams);
