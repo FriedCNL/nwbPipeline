@@ -73,7 +73,7 @@ function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist,
     outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d_removeStimulationArtifacts-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject), int8(runStimulationArtifactRemoval)));
 
     jsonStimParams = jsonencode(stimulationArtifactParams, PrettyPrint=true);
-    jsonStimFname = [expFilePath, '/stim_artifact_removal_params.json'];
+    jsonStimFname = [outputPath, '/stim_artifact_removal_params.json'];
     jsonStimFID = fopen(jsonStimFname,'w');
     fprintf(jsonStimFID, jsonStimParams);
     fclose(jsonStimFID);
