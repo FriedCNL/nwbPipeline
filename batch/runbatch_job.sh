@@ -71,6 +71,7 @@ runStimulationArtifactRemoval="0"
 stimulationArtifactPreRemovalTimeSecs="0.05"
 stimulationArtifactPostRemovalTimeSecs="0.3"
 stimTTL="1";
+testStimTTL="32"
 
 # if expIds is updated, do not skipExist any steps so that threshold for spike detection is same across experiments
 skipExist="[0, 0, 0]"  # [spike detection, spike code, spike clustering]
@@ -116,6 +117,7 @@ matlab  -nosplash -nodisplay <<EOF
     stimulationArtifactParams.preRemovalTimeSecs = ${stimulationArtifactPreRemovalTimeSecs};
     stimulationArtifactParams.postRemovalTimeSecs = ${stimulationArtifactPostRemovalTimeSecs};
     stimulationArtifactParams.stimTTL = ${stimTTL};
+    stimulationArtifactParams.testStimTTL = ${testStimTTL};
     stimulationArtifactParams.eventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', expIds), '/CSC_events']);
 
     maxNumCompThreads($maxThreads);

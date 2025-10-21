@@ -47,7 +47,7 @@ if runStimulationArtifactRemoval
 
     end
 
-    stimArtifactStartTimestamps = fullEventsTimestamps(fullEventsTTLs == stimulationArtifactParams.stimTTL);
+    stimArtifactStartTimestamps = fullEventsTimestamps(fullEventsTTLs == stimulationArtifactParams.stimTTL | fullEventsTTLs == stimulationArtifactParams.testStimTTL);
     stimulationArtifactParams.stimArtifactEndTimestamps = stimArtifactStartTimestamps + stimulationArtifactParams.postRemovalTimeSecs;
     stimulationArtifactParams.stimArtifactStartTimestamps = stimArtifactStartTimestamps - stimulationArtifactParams.preRemovalTimeSecs;
 end

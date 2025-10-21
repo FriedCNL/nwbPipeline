@@ -40,6 +40,7 @@ stimulationArtifactParams = struct;
 stimulationArtifactParams.preRemovalTimeSecs = 0.05; % How much time before each stimulation to remove data from (in secs)
 stimulationArtifactParams.postRemovalTimeSecs = 0.3; % How much time after each stimulation to remove data from (in secs)
 stimulationArtifactParams.stimTTL = 1; % TTL value that corresponds to a stimulation
+stimulationArtifactParams.testStimTTL = 32; % TTL value that corresponds to a test stimulation
 stimulationArtifactParams.eventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', expIds), '/CSC_events']);
 
 maxNumCompThreads(numParallelJobs);
