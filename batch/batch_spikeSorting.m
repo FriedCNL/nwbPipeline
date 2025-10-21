@@ -70,13 +70,16 @@ function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist,
     %% spike detection:
 
     expFilePath = [filePath, '/Experiment', sprintf('-%d', expIds)];
-    outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d_removeStimulationArtifacts-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject), int8(runStimulationArtifactRemoval)));
+    outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d_removeStimArtifacts-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject), int8(runStimulationArtifactRemoval)));
+    if ~exist(outputPath,'dir'); mkdir(outputPath); end
 
     jsonStimParams = jsonencode(stimulationArtifactParams, PrettyPrint=true);
-    jsonStimFname = [outputPath, '/stim_artifact_removal_params.json'];
-    jsonStimFID = fopen(jsonStimFname,'w');
-    fprintf(jsonStimFID, jsonStimParams);
-    fclose(jsonStimFID);
+    jsonStimFname = fullfile(outputPath, 'stim_artifact_removal_params.json');
+    if ~exist(jsonStimFname,'file') % for when parallel jobs sent
+        jsonStimFID = fopen(jsonStimFname,'w');
+        fprintf(jsonStimFID, jsonStimParams);
+        fclose(jsonStimFID);
+    end
 
     fprintf('run spike detection in parallel on %d (out of %d) threads...\n', parJobs, maxNumCompThreads);
     spikeFiles = spikeDetection(microFiles, timestampFiles, outputPath, expNames, skipExist(1), runRemovePLI, runCAR, runStimulationArtifactRemoval, stimulationArtifactParams);
