@@ -32,26 +32,6 @@ makeOutputPath(cscFiles, outputPath, skipExist);
 nSegments = length(timestampFiles);
 outputFiles = cell(1, size(cscFiles, 1));
 
-% Load start and end timestamps for all stim artifacts if we are doing stim
-% artifact removal
-if runStimulationArtifactRemoval
-    eventsFiles = dir(fullfile([stimulationArtifactParams.eventsDir '/Events*.mat']));
-
-    fullEventsTimestamps = [];
-    fullEventsTTLs = [];
-    for eventIdx = 1:length(eventsFiles)
-        eventsFile = fullfile([eventsFiles(eventIdx).folder '/'  eventsFiles(eventIdx).name]);
-        eventsLoad = load(eventsFile);
-        fullEventsTimestamps = [fullEventsTimestamps eventsLoad.timestamps];
-        fullEventsTTLs = [fullEventsTTLs eventsLoad.TTLs];
-
-    end
-
-    stimArtifactStartTimestamps = fullEventsTimestamps(fullEventsTTLs == stimulationArtifactParams.stimTTL | fullEventsTTLs == stimulationArtifactParams.testStimTTL);
-    stimulationArtifactParams.stimArtifactEndTimestamps = stimArtifactStartTimestamps + stimulationArtifactParams.postRemovalTimeSecs;
-    stimulationArtifactParams.stimArtifactStartTimestamps = stimArtifactStartTimestamps - stimulationArtifactParams.preRemovalTimeSecs;
-end
-
 parfor i = 1:size(cscFiles, 1)
     channelFiles = cscFiles(i,:);
 

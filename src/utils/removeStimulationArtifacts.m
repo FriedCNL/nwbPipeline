@@ -1,6 +1,25 @@
 function stimRemoveSignal = removeStimulationArtifacts(originalSignal, originalTimestamps, stimulationArtifactParams)
     stimRemoveSignal = originalSignal;
 
+
+    % Load start and end timestamps for all stim artifacts if we are doing stim
+    % artifact removal
+    eventsFiles = dir(fullfile([stimulationArtifactParams.eventsDir '/Events*.mat']));
+
+    fullEventsTimestamps = [];
+    fullEventsTTLs = [];
+    for eventIdx = 1:length(eventsFiles)
+        eventsFile = fullfile([eventsFiles(eventIdx).folder '/'  eventsFiles(eventIdx).name]);
+        eventsLoad = load(eventsFile);
+        fullEventsTimestamps = [fullEventsTimestamps eventsLoad.timestamps];
+        fullEventsTTLs = [fullEventsTTLs eventsLoad.TTLs];
+
+    end
+
+    stimArtifactStartTimestamps = fullEventsTimestamps(fullEventsTTLs == stimulationArtifactParams.stimTTL | fullEventsTTLs == stimulationArtifactParams.testStimTTL);
+    stimulationArtifactParams.stimArtifactEndTimestamps = stimArtifactStartTimestamps + stimulationArtifactParams.postRemovalTimeSecs;
+    stimulationArtifactParams.stimArtifactStartTimestamps = stimArtifactStartTimestamps - stimulationArtifactParams.preRemovalTimeSecs;
+
     %timeDiffEps = 20*1e-6; % CSC times should be shifted ~+16micro from TTL times, make check 20 to be safe
     timeDiffEps = mode(diff(originalTimestamps)) / 2 + (4e-6);
     stimStartTSMatch = arrayfun(@(x) findTimestampIndex(x, originalTimestamps, timeDiffEps, 1, length(originalTimestamps)), stimulationArtifactParams.stimArtifactStartTimestamps);
