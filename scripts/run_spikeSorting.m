@@ -37,11 +37,23 @@ runRejectSpike = false;
 % Stimulation artifact removal
 runStimulationArtifactRemoval = true;
 stimulationArtifactParams = struct;
+stimulationArtifactParams.stimulationExps = [9]; % list of stimulation experiments to remove artifacts from (leave empty to remove from all exps)
 stimulationArtifactParams.preRemovalTimeSecs = 0.05; % How much time before each stimulation to remove data from (in secs)
 stimulationArtifactParams.postRemovalTimeSecs = 0.3; % How much time after each stimulation to remove data from (in secs)
 stimulationArtifactParams.stimTTL = 1; % TTL value that corresponds to a stimulation
 stimulationArtifactParams.testStimTTL = 32; % TTL value that corresponds to a test stimulation
-stimulationArtifactParams.eventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', expIds), '/CSC_events']);
+
+if (runStimulationArtifactRemoval && isempty(stimulationArtifactParams.stimulationExps))
+    stimulationArtifactParams.stimulationExps = expIds;
+end
+stimulationArtifactParams.eventsDirs = {};
+
+for stimulationExpIdx =  1:length(stimulationArtifactParams.stimulationExps)
+    stimulationExpId = stimulationArtifactParams.stimulationExps(stimulationExpIdx);
+    stimExpEventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', stimulationExpId), '/CSC_events']);
+    stimulationArtifactParams.eventsDirs{1, stimulationExpIdx} = stimExpEventsDir;
+end
+
 
 maxNumCompThreads(numParallelJobs);
 batch_spikeSorting(1, 1, expIds, filePath, skipExist, runRemovePLI, runCAR, runRejectSpike, runStimulationArtifactRemoval, stimulationArtifactParams);

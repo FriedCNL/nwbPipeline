@@ -68,6 +68,7 @@ runSpikeReject="1"
 
 # stimulation artifact rejection parameters
 runStimulationArtifactRemoval="0"
+stimulationArtifactStimulationExps = "[9]" 
 stimulationArtifactPreRemovalTimeSecs="0.05"
 stimulationArtifactPostRemovalTimeSecs="0.3"
 stimTTL="1";
@@ -114,11 +115,22 @@ matlab  -nosplash -nodisplay <<EOF
 
     runStimulationArtifactRemoval = ${runStimulationArtifactRemoval};
     stimulationArtifactParams = struct;
+    stimulationArtifactParams.stimulationExps = ${stimulationArtifactPreRemovalTimeSecs};
     stimulationArtifactParams.preRemovalTimeSecs = ${stimulationArtifactPreRemovalTimeSecs};
     stimulationArtifactParams.postRemovalTimeSecs = ${stimulationArtifactPostRemovalTimeSecs};
     stimulationArtifactParams.stimTTL = ${stimTTL};
     stimulationArtifactParams.testStimTTL = ${testStimTTL};
-    stimulationArtifactParams.eventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', expIds), '/CSC_events']);
+    
+    if (runStimulationArtifactRemoval && isempty(stimulationArtifactParams.stimulationExps))
+        stimulationArtifactParams.stimulationExps = expIds;
+    end
+    stimulationArtifactParams.eventsDirs = {};
+    
+    for stimulationExpIdx =  1:length(stimulationArtifactParams.stimulationExps)
+        stimulationExpId = stimulationArtifactParams.stimulationExps(stimulationExpIdx);
+        stimExpEventsDir = fullfile([filePath, '/Experiment', sprintf('-%d', stimulationExpId), '/CSC_events']);
+        stimulationArtifactParams.eventsDirs{1, stimulationExpIdx} = stimExpEventsDir;
+    end
 
     maxNumCompThreads($maxThreads);
     if strcmp('${mode}', 'spikeSorting')

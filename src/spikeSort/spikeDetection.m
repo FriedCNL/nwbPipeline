@@ -34,6 +34,7 @@ outputFiles = cell(1, size(cscFiles, 1));
 
 parfor i = 1:size(cscFiles, 1)
     channelFiles = cscFiles(i,:);
+    
 
     if all(cellfun(@(x)~exist(x, "file"), cscFiles(i, :)))
         warning('csc file not exist %s\n', cscFiles{i, :});
@@ -71,8 +72,8 @@ parfor i = 1:size(cscFiles, 1)
     ExpNameId = cell(nSegments, 1);
     % spikeTimestamps = cell(nSegments, 1);
     duration = 0;
-
-    [outputStruct, param] = getDetectionThresh(channelFiles, runRemovePLI);
+    
+    [outputStruct, param] = getDetectionThresh(channelFiles, runRemovePLI, runStimulationArtifactRemoval, stimulationArtifactParams, timestampFiles);
     timestampsStart = NaN;
     for j = 1: nSegments
         if ~exist(channelFiles{j}, "file")
@@ -98,9 +99,10 @@ parfor i = 1:size(cscFiles, 1)
 
         % Perform stimulus artifact removal
         if runStimulationArtifactRemoval
+            currentExpID = getExperimentIDFromPath(channelFiles{j});
             [~, current_micro_fname] = fileparts(cscFiles{i, j});
             fprintf("Beginning artifact removal for: %s\n", current_micro_fname);
-            stimRemovedSignal = removeStimulationArtifacts(signal, timestamps, stimulationArtifactParams);
+            stimRemovedSignal = removeStimulationArtifacts(signal, timestamps, stimulationArtifactParams, currentExpID);
             signal = stimRemovedSignal;
             if j <= 2
                 stimStruct = struct("stimRemovedSignal", stimRemovedSignal);

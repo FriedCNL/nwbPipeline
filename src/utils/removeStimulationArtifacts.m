@@ -1,10 +1,23 @@
-function stimRemoveSignal = removeStimulationArtifacts(originalSignal, originalTimestamps, stimulationArtifactParams)
+function stimRemoveSignal = removeStimulationArtifacts(originalSignal, originalTimestamps, stimulationArtifactParams, currentExpID)
     stimRemoveSignal = originalSignal;
 
+    % Check if the current experiment is a removal-targeted experiment and
+    % get the corresponding eventsDir if so
+    experimentIndex = 1;
+    if nargin > 3
+        experimentIndex = find(stimulationArtifactParams.stimulationExps == currentExpID);
+    end
+    % If no experiment index found, tis is not a removal-targeted
+    % experiment, so just return the original signal
+    if isempty(experimentIndex)
+        return;
+    end
 
+    eventsDir = stimulationArtifactParams.eventsDirs{1, experimentIndex(1)};
+    
     % Load start and end timestamps for all stim artifacts if we are doing stim
     % artifact removal
-    eventsFiles = dir(fullfile([stimulationArtifactParams.eventsDir '/Events*.mat']));
+    eventsFiles = dir(fullfile([eventsDir '/Events*.mat']));
 
     fullEventsTimestamps = [];
     fullEventsTTLs = [];

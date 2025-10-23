@@ -24,6 +24,7 @@ function [spikeThresh, param] = getDetectionThresh(channelFiles, runRemovePLI, r
             warning("getDetectionThresh: file not exist: %s", channelFiles{i})
             continue
         end
+        currentExpID = getExperimentIDFromPath(channelFiles{i});
         [x, samplingInterval] = readCSC(channelFiles{i}, runRemovePLI);
         % assume same sampling interval across channels.
         fprintf("getDetectionThresh: sampling frequency: %d\n", 1/samplingInterval)
@@ -31,7 +32,7 @@ function [spikeThresh, param] = getDetectionThresh(channelFiles, runRemovePLI, r
         
         if runStimulationArtifactRemoval
             [timestamps, ~] = readTimestamps(timestampFiles{i});
-            stimRemovedSignal = removeStimulationArtifacts(signal, timestamps, stimulationArtifactParams);
+            stimRemovedSignal = removeStimulationArtifacts(x, timestamps, stimulationArtifactParams, currentExpID);
             x = stimRemovedSignal;
         end
 
