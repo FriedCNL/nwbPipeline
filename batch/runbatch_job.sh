@@ -115,7 +115,7 @@ matlab  -nosplash -nodisplay <<EOF
 
     runStimulationArtifactRemoval = ${runStimulationArtifactRemoval};
     stimulationArtifactParams = struct;
-    stimulationArtifactParams.stimulationExps = ${stimulationArtifactPreRemovalTimeSecs};
+    stimulationArtifactParams.stimulationExps = ${stimulationArtifactStimulationExps};
     stimulationArtifactParams.preRemovalTimeSecs = ${stimulationArtifactPreRemovalTimeSecs};
     stimulationArtifactParams.postRemovalTimeSecs = ${stimulationArtifactPostRemovalTimeSecs};
     stimulationArtifactParams.stimTTL = ${stimTTL};
