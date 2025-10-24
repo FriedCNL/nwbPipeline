@@ -72,7 +72,8 @@ stimulationArtifactStimulationExps = "[9]"
 stimulationArtifactPreRemovalTimeSecs="0.05"
 stimulationArtifactPostRemovalTimeSecs="0.3"
 stimTTL="1";
-testStimTTL="32"
+testStimTTL="32";
+stimulationArtifactSaveRemovedSignalSegments="2";
 
 # if expIds is updated, do not skipExist any steps so that threshold for spike detection is same across experiments
 skipExist="[0, 0, 0]"  # [spike detection, spike code, spike clustering]
@@ -120,6 +121,7 @@ matlab  -nosplash -nodisplay <<EOF
     stimulationArtifactParams.postRemovalTimeSecs = ${stimulationArtifactPostRemovalTimeSecs};
     stimulationArtifactParams.stimTTL = ${stimTTL};
     stimulationArtifactParams.testStimTTL = ${testStimTTL};
+    stimulationArtifactParams.saveRemovedSignalSegments = ${stimulationArtifactSaveRemovedSignalSegments}; 
     
     if (runStimulationArtifactRemoval && isempty(stimulationArtifactParams.stimulationExps))
         stimulationArtifactParams.stimulationExps = expIds;

@@ -104,11 +104,13 @@ parfor i = 1:size(cscFiles, 1)
             fprintf("Beginning artifact removal for: %s\n", current_micro_fname);
             stimRemovedSignal = removeStimulationArtifacts(signal, timestamps, stimulationArtifactParams, currentExpID);
             signal = stimRemovedSignal;
-            if j <= 2
+            if j <= stimulationArtifactParams.saveRemovedSignalSegments
                 stimStruct = struct("stimRemovedSignal", stimRemovedSignal);
                 %stimStruct.startTimestamps = stimulationArtifactParams.stimArtifactStartTimestamps;
                 %stimStruct.endTimestamps = stimulationArtifactParams.stimArtifactEndTimestamps;
-                stimRemovedSignalFilename = fullfile(outputPath, ['stim_removed_signal_', current_micro_fname, '.mat']);
+                stimRemovedOutputDir = [outputPath, '/stim_removed_exp-',num2str(currentExpID),'/'];
+                if ~exist(stimRemovedOutputDir,'dir'); mkdir(stimRemovedOutputDir); end
+                stimRemovedSignalFilename = fullfile(stimRemovedOutputDir, ['stim_removed_signal_exp-', num2str(currentExpID), '_', current_micro_fname, '.mat']);
                 fprintf("Saving: %s\n", stimRemovedSignalFilename);
                 save(stimRemovedSignalFilename, "-fromstruct", stimStruct);
                 

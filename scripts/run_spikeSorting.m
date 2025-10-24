@@ -42,6 +42,7 @@ stimulationArtifactParams.preRemovalTimeSecs = 0.05; % How much time before each
 stimulationArtifactParams.postRemovalTimeSecs = 0.3; % How much time after each stimulation to remove data from (in secs)
 stimulationArtifactParams.stimTTL = 1; % TTL value that corresponds to a stimulation
 stimulationArtifactParams.testStimTTL = 32; % TTL value that corresponds to a test stimulation
+stimulationArtifactParams.saveRemovedSignalSegments = 2; % Will save the artifact-removed signal of up to this number of segments. Set to 0 for no artifact-removed outputs
 
 if (runStimulationArtifactRemoval && isempty(stimulationArtifactParams.stimulationExps))
     stimulationArtifactParams.stimulationExps = expIds;
