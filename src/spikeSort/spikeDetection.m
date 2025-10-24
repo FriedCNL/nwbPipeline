@@ -106,8 +106,8 @@ parfor i = 1:size(cscFiles, 1)
             signal = stimRemovedSignal;
             if j <= 2
                 stimStruct = struct("stimRemovedSignal", stimRemovedSignal);
-                stimStruct.startTimestamps = stimulationArtifactParams.stimArtifactStartTimestamps;
-                stimStruct.endTimestamps = stimulationArtifactParams.stimArtifactEndTimestamps;
+                %stimStruct.startTimestamps = stimulationArtifactParams.stimArtifactStartTimestamps;
+                %stimStruct.endTimestamps = stimulationArtifactParams.stimArtifactEndTimestamps;
                 stimRemovedSignalFilename = fullfile(outputPath, ['stim_removed_signal_', current_micro_fname, '.mat']);
                 fprintf("Saving: %s\n", stimRemovedSignalFilename);
                 save(stimRemovedSignalFilename, "-fromstruct", stimStruct);
