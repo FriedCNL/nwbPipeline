@@ -1,4 +1,4 @@
-function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist, runRemovePLI, runCAR, runSpikeReject)
+function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist, runRemovePLI, runCAR, runSpikeReject, runStimulationArtifactRemoval, stimulationArtifactParams)
     % run spike detection and spike sorting to the unpacked data:
     % run can modify this script and run on different patients/exp when
     % at least one previous job is running (a temporary job script is created).
@@ -21,6 +21,12 @@ function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist,
     if nargin < 7
         runCAR = false;
     end
+
+    if nargin < 8
+        runStimulationArtifactRemoval = false;
+        stimulationArtifactParams = struct;
+    end
+    stimulationArtifactParams.runStimulationArtifactRemoval = runStimulationArtifactRemoval;
 
     if ~exist('runSpikeReject', 'var')
         runSpikeReject = true;
@@ -64,10 +70,19 @@ function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist,
     %% spike detection:
 
     expFilePath = [filePath, '/Experiment', sprintf('-%d', expIds)];
-    outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject)));
+    outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d_removeStimArtifacts-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject), int8(runStimulationArtifactRemoval)));
+    if ~exist(outputPath,'dir'); mkdir(outputPath); end
+
+    jsonStimParams = jsonencode(stimulationArtifactParams, PrettyPrint=true);
+    jsonStimFname = fullfile(outputPath, 'stim_artifact_removal_params.json');
+    if ~exist(jsonStimFname,'file') % for when parallel jobs sent
+        jsonStimFID = fopen(jsonStimFname,'w');
+        fprintf(jsonStimFID, jsonStimParams);
+        fclose(jsonStimFID);
+    end
 
     fprintf('run spike detection in parallel on %d (out of %d) threads...\n', parJobs, maxNumCompThreads);
-    spikeFiles = spikeDetection(microFiles, timestampFiles, outputPath, expNames, skipExist(1), runRemovePLI, runCAR);
+    spikeFiles = spikeDetection(microFiles, timestampFiles, outputPath, expNames, skipExist(1), runRemovePLI, runCAR, runStimulationArtifactRemoval, stimulationArtifactParams);
     disp('Spike Detection Finished!')
 
     %% spike clustering:

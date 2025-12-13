@@ -1,4 +1,4 @@
-function outputFiles = spikeDetection(cscFiles, timestampFiles, outputPath, experimentName, skipExist, runRemovePLI, runCAR)
+function outputFiles = spikeDetection(cscFiles, timestampFiles, outputPath, experimentName, skipExist, runRemovePLI, runCAR, runStimulationArtifactRemoval, stimulationArtifactParams)
 %spikeDetection Summary of this function goes here
 %   cscFiles cell(m, n). m: number of channels. n: number of files in each
 %   channel. spikes detected from file in each row will be combined.
@@ -20,6 +20,11 @@ if nargin < 7
     runCAR = true;
 end
 
+if nargin < 8
+    runStimulationArtifactRemoval = false;
+    stimulationArtifactParams = struct;
+end
+
 saveXfDetect = false;
 clearRemovePLI = true;
 
@@ -27,9 +32,9 @@ makeOutputPath(cscFiles, outputPath, skipExist);
 nSegments = length(timestampFiles);
 outputFiles = cell(1, size(cscFiles, 1));
 
-parfor i = 1: size(cscFiles, 1)
-
+parfor i = 1:size(cscFiles, 1)
     channelFiles = cscFiles(i,:);
+    
 
     if all(cellfun(@(x)~exist(x, "file"), cscFiles(i, :)))
         warning('csc file not exist %s\n', cscFiles{i, :});
@@ -67,8 +72,8 @@ parfor i = 1: size(cscFiles, 1)
     ExpNameId = cell(nSegments, 1);
     % spikeTimestamps = cell(nSegments, 1);
     duration = 0;
-
-    [outputStruct, param] = getDetectionThresh(channelFiles, runRemovePLI);
+    
+    [outputStruct, param] = getDetectionThresh(channelFiles, runRemovePLI, runStimulationArtifactRemoval, stimulationArtifactParams, timestampFiles);
     timestampsStart = NaN;
     for j = 1: nSegments
         if ~exist(channelFiles{j}, "file")
@@ -92,6 +97,25 @@ parfor i = 1: size(cscFiles, 1)
             fprintf('%s\n', timestampFiles);
         end
 
+        % Perform stimulus artifact removal
+        if runStimulationArtifactRemoval
+            currentExpID = getExperimentIDFromPath(channelFiles{j});
+            [~, current_micro_fname] = fileparts(cscFiles{i, j});
+            fprintf("Beginning artifact removal for: %s\n", current_micro_fname);
+            stimRemovedSignal = removeStimulationArtifacts(signal, timestamps, stimulationArtifactParams, currentExpID);
+            signal = stimRemovedSignal;
+            if j <= stimulationArtifactParams.saveRemovedSignalSegments
+                stimStruct = struct("stimRemovedSignal", stimRemovedSignal);
+                %stimStruct.startTimestamps = stimulationArtifactParams.stimArtifactStartTimestamps;
+                %stimStruct.endTimestamps = stimulationArtifactParams.stimArtifactEndTimestamps;
+                stimRemovedOutputDir = [outputPath, '/stim_removed_exp-',num2str(currentExpID),'/'];
+                if ~exist(stimRemovedOutputDir,'dir'); mkdir(stimRemovedOutputDir); end
+                stimRemovedSignalFilename = fullfile(stimRemovedOutputDir, ['stim_removed_signal_exp-', num2str(currentExpID), '_', current_micro_fname, '.mat']);
+                fprintf("Saving: %s\n", stimRemovedSignalFilename);
+                save(stimRemovedSignalFilename, "-fromstruct", stimStruct);
+                
+            end
+        end
         % duration includes gaps between experiments, which is necessary
         % for spikeHist calculation in getSpikeCodes. This take huge
         % memory.
@@ -175,3 +199,5 @@ function catchErr(tempSpikeFilename, spikeFilename, ME)
     warning(sprintf('spikeDetection: error writing file %s\n:', spikeFilename))
     fprintf('Error message: %s\n', ME.message);
 end
+
+
