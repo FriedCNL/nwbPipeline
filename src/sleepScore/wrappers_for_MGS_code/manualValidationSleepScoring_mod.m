@@ -34,6 +34,13 @@ plot(T(logical(pointsPassedREMThresh)), 18, '.k', 'markersize', msz);
 answer = input('add a new NREM session?(Y/N)', 's');
 while strcmpi(answer, 'Y')
     [x,y] = ginput(2);
+     % handle OOB
+    if x(1)<0
+        x(1)=0;
+    end
+    if x(2) > T(end)
+        x(2)=T(end);
+    end
     line(x(1)*ones(1,2), YLIM, 'color', 'r');
     line(x(2)*ones(1,2), YLIM, 'color', 'g');
     
@@ -50,7 +57,14 @@ end
 
 answer = input('erase an existing session?(Y/N)','s');
 while strcmpi(answer,'Y')
-    [x,y] = ginput(2);
+    [x,~] = ginput(2);
+    % handle OOB
+    if x(1)<0
+        x(1)=0;
+    end
+    if x(2) > T(end)
+        x(2)=T(end);
+    end
     line(x(1)*ones(1,2),YLIM,'color','r')
     line(x(2)*ones(1,2),YLIM,'color','g')
     pause
@@ -60,7 +74,11 @@ while strcmpi(answer,'Y')
         [~, ind2] = min( abs(T-x(2)));
         pointsPassedREMThresh(ind1:ind2) = 0;
         pointsPassedSleepThresh(ind1:ind2) = 0;
-        sleep_score_vec(floor(x(1)*obj.samplingRate):floor(x(2)*obj.samplingRate)) = 0;
+        if x(1) == 0
+            sleep_score_vec(1:floor(x(2)*obj.samplingRate)) = 0;
+        else
+            sleep_score_vec(floor(x(1)*obj.samplingRate):floor(x(2)*obj.samplingRate)) = 0;
+        end
     end
     answer = input('remove additional scoring between lines ?(Y/N)','s');
 end
@@ -79,7 +97,7 @@ save(fullfile(outputPath, sprintf('sleepScore_manualValidated_%s', LocalHeader.o
     'sleep_score_vec', 'obj', 'pointsPassedSleepThresh', 'pointsPassedREMThresh')
 
 % Plot final figures
-figure_name_out = fullfile(outputPath, sprintf('manualVAlidatedSleepScore_%s', LocalHeader.origName));
+figure_name_out = fullfile(outputPath, sprintf('manualValidatedSleepScore_%s', LocalHeader.origName));
 figure('Name', figure_name_out, 'NumberTitle', 'off');
 set(gcf, 'PaperUnits', 'centimeters', 'PaperPosition', [0.2 0.2 21 30]); % this size is the maximal to fit on an A4 paper when printing to PDF
 set(gcf, 'PaperOrientation', 'portrait');
@@ -174,6 +192,6 @@ text(0,0.5,sprintf('NREM = %2.2f%%', 100*sum(sleep_score_vec == obj.NREM_CODE)/(
 text(0,0.4,sprintf('REM = ~%2.2f%%', 100*sum(sleep_score_vec == obj.REM_CODE)/(endInd-startInd)))
 axis off
 
-% PrintActiveFigs(figure_folder)
+saveas(gcf,fullfile(outputPath, sprintf('sleepScore_manualValidated_%s.png', LocalHeader.origName)))
 
 end

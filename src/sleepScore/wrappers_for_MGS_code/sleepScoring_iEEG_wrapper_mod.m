@@ -1,4 +1,4 @@
-function sleep_score_vec = sleepScoring_iEEG_wrapper(macroFiles, macroTimestampFiles, outputPath, manualValidation)
+function sleep_score_vec = sleepScoring_iEEG_wrapper_mod(macroFiles, macroTimestampFiles, outputPath, manualValidation)
 
 if (~exist('manualValidation','var'))
     manualValidation = 0;
