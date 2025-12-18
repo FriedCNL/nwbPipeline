@@ -182,7 +182,7 @@ classdef SpindleDetectorClass < handle
                 psdx = psdx(fitRangeInds);
                 psdx(isnan(psdx)) = 0; % zero out if we have a small percentage of NaN values
                 %                 try
-                f = fit(freq',psdx','power2',fitOpts);
+                f = fit(freq',double(psdx'),'power2',fitOpts);
                 %                 catch
                 %                     a=1;
                 %                 end
