@@ -131,7 +131,7 @@ classdef SpikeWaveDetectorClass < handle
                 indsPerPeak = {};
             end
             
-            originalData = data;
+            originalData = data; % segments with nans in the original data (eg removed noise) are dealt with later
             
             % Detect IIS on NREM sleep
             if useSleepScoring
