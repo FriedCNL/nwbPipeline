@@ -243,7 +243,7 @@ classdef RippleDetector_class < handle
                 for iRipple = 1:size(rippleSegs,1)
                     currRipple = data(rippleSegs(iRipple,1):rippleSegs(iRipple,2));
                     %average ripple
-                    if isnan(currRipple)/length(currRipple)>=obj.minPercNaNAllowed
+                    if sum(isnan(currRipple))/length(currRipple) >= obj.minPercNaNAllowed % SD bug fix
                         continue;
                     end
                     currRipple = movmean(currRipple, obj.NPointsToAverage);

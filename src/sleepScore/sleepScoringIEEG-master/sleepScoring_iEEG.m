@@ -38,34 +38,66 @@ classdef sleepScoring_iEEG < handle
         function [sleep_score_vec] = evaluateDelta(obj, data, LocalHeader, outputPath)
             % sleep_score_vec has same FS as data (2000 Hz for macro data).
 
-            data(isnan(data)) = 0;
+            
             sleepScoreFile = fullfile(outputPath, sprintf('sleepScore_%s.mat', LocalHeader.origName));
             
+            % SD edit NaN handling - remoiveNoise now sets to NaN
+
             % remove extremely noisy data segments (like around stimulation
             % that shift the power to higher frequencies)
             if obj.EXTREME_NOISE
                 data = removeNoise(obj, data);
             end
             %%
-            
+
+            % Identify NaN-contaminated epochs before replacing NaN
             window = obj.scoringEpochDuration * obj.samplingRate;
+            nEpochs = floor(length(data) / window);
+            nanPercPerEpoch = zeros(1, nEpochs);
+            for iEpoch = 1:nEpochs
+                epochStart = (iEpoch-1)*window + 1;
+                epochEnd = min(iEpoch*window, length(data));
+                epochData = data(epochStart:epochEnd);
+                nanPercPerEpoch(iEpoch) = sum(isnan(epochData)) / length(epochData);
+            end
+
+            % Define invalid epochs (>50% NaN)
+            nanThreshold = 0.5;
+            invalidEpochs = nanPercPerEpoch > nanThreshold;
+
+            % Warn if significant data loss
+            percInvalid = 100 * sum(invalidEpochs) / length(invalidEpochs);
+            if percInvalid > 10
+                warning('Sleep scoring: %.1f%% of epochs have >%.0f%% NaN and will be excluded', ...
+                    percInvalid, nanThreshold*100);
+            end
+
+            data(isnan(data)) = 0; % so spectrgram works
+
             [~,F,T,P]  = spectrogram(data, window, 0, [0.5:0.2:obj.flimits(2)], obj.samplingRate, 'yaxis');
+
             diffSamples = obj.minDistBetweenEvents/diff(T(1:2)); %samples
+
             P_delta = movsum(sum(P(F > obj.deltaRangeMin & F < obj.deltaRangeMax,:)), 7);
-            
-            thSleepInclusion = prctile(P_delta, obj.NREMprctile);
-            thREMInclusion = prctile(P_delta, obj.REMprctile);
+
+            % Mark invalid epochs in power measures
+            validLength = min(length(invalidEpochs), length(P_delta));
+            P_delta(invalidEpochs(1:validLength)) = NaN;
+
+            thSleepInclusion = prctile(P_delta(~isnan(P_delta)), obj.NREMprctile);
+            thREMInclusion = prctile(P_delta(~isnan(P_delta)), obj.REMprctile);
             pointsPassedSleepThresh = P_delta > thSleepInclusion;
             pointsPassedREMThresh = P_delta < thREMInclusion;
             
             %find points which pass the peak threshold
-            meanSleep = mean(P_delta);
-            stdSleep = std(P_delta);
+            meanSleep = nanmean(P_delta);
+            stdSleep = nanstd(P_delta);
             detectionThresholdSD = 1.5;
             pointsPassedThresh = ((P_delta-meanSleep)/stdSleep > detectionThresholdSD);
             pointsBelowThresh = ((P_delta-meanSleep)/stdSleep < detectionThresholdSD);
 
             P_sp = movsum(sum(P(F > obj.spRangeMin & F < obj.spRangeMax, :)), 5);
+            P_sp(invalidEpochs(1:validLength)) = NaN;
             
             figure_name_out = sprintf('sleepScore_process_%s.png', LocalHeader.origName);
             figure('Name', fullfile(outputPath, figure_name_out), 'NumberTitle', 'off');
@@ -78,6 +110,8 @@ classdef sleepScoring_iEEG < handle
             axes('position', [0.1,0.5,0.8,0.3])
 
             P_ripple = getRipplePower(obj, data);
+            P_ripple(invalidEpochs(1:min(length(invalidEpochs), length(P_ripple)))) = NaN;
+
             
             P2 = P/max(max(P));
             P2 = (10*log10(abs(P2+obj.scaling_factor_delta_log)))';
@@ -140,6 +174,9 @@ classdef sleepScoring_iEEG < handle
                         data_merge = ~Svec;
                     end
                 end
+
+                % Treat NaN epochs as not passing threshold (set to 0)
+                data_merge(isnan(data_merge)) = 0;
 
                 diffStartEnd = diff(data_merge);
                 %events are defined by sequences which have a peak above
@@ -248,6 +285,10 @@ classdef sleepScoring_iEEG < handle
             T_ends = T + (obj.scoringEpochDuration/2);
             sleep_score_vec(1:T_ends(1)*obj.samplingRate) = pointsPassedSleepThresh(1);
             for iEpoch = 2:length(T_ends)
+                 % Skip invalid epochs (leave as 0 = unscored)
+                if iEpoch <= length(invalidEpochs) && invalidEpochs(iEpoch)
+                    continue;
+                end
                 if(pointsPassedSleepThresh(iEpoch))
                     sleep_score_vec(T_ends(iEpoch-1)*obj.samplingRate+1:T_ends(iEpoch)*obj.samplingRate) = obj.NREM_CODE;
                 elseif pointsPassedREMThresh(iEpoch)
@@ -255,7 +296,7 @@ classdef sleepScoring_iEEG < handle
                 end
             end
 
-            save(sleepScoreFile,'T','F','P2','sleep_score_vec','obj','P_delta','pointsPassedSleepThresh','pointsPassedREMThresh')
+            save(sleepScoreFile,'T','F','P2','sleep_score_vec','obj','P_delta','pointsPassedSleepThresh','pointsPassedREMThresh','invalidEpochs','nanPercPerEpoch')
             
             
             if obj.PLOT_FIG
@@ -402,7 +443,7 @@ classdef sleepScoring_iEEG < handle
                 for iTimeWin=1:nTimeWins
                     % normsTimeWin(1,iTimeWin) = sqrt(nansum(data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin).^2));
                     if normsTimeWin(1,iTimeWin) > medStd
-                        data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin) = 0;
+                        data((iTimeWin-1)*timeWin+1:iTimeWin*timeWin) = NaN;
                     end
                 end
         end

@@ -130,17 +130,21 @@ classdef SpikeWaveDetectorClass < handle
                 zscoresPerPeaksGrad = {};
                 indsPerPeak = {};
             end
-            %replace nans by zeros
+            
             originalData = data;
-            data(isnan(data)) = 0;
             
             % Detect IIS on NREM sleep
             if useSleepScoring
-                sleepScoring = sleepScoringVec;
-                data(sleepScoring ~= obj.NREM) = 0;
+                nremMask = (sleepScoringVec(:) == obj.NREM);
+                data(~nremMask) = NaN;
+            else
+                nremMask = true(size(data));
             end
-            zsAmp_all = zscore(data); % zscore over the entire NREM session   
+
+            zsAmp_all = zscore(data,'omitnan'); % zscore over the entire NREM session/clean data   
             
+            data(isnan(data)) = 0; %replace nans by zeros
+
             pointsInBlock = obj.blockSizeSec*obj.samplingRate;
             nBlocks = floor(length(data)/pointsInBlock);
             ind = 1;
@@ -232,6 +236,10 @@ classdef SpikeWaveDetectorClass < handle
                     %are met
                     pointsPassedThresh = pointsPassedThreshEnv & pointsPassedThreshGradient & pointsPassedThreshAmplitude;
                 end
+                % ensure only NREM detections, if sleep scoring passed
+                blockMask = nremMask((iBlock-1)*pointsInBlock+1:iBlock*pointsInBlock);
+                pointsPassedThresh = pointsPassedThresh & blockMask(:)'; 
+
                                
                 %findSequence is called in order to check whether there is
                 %a sequence of points lasting X ms to pass the threshold
