@@ -70,7 +70,10 @@ function batch_spikeSorting(workerId, totalWorkers, expIds, filePath, skipExist,
     %% spike detection:
 
     expFilePath = [filePath, '/Experiment', sprintf('-%d', expIds)];
-    outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d_removeStimArtifacts-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject), int8(runStimulationArtifactRemoval)));
+    outputPath = fullfile(expFilePath, sprintf('CSC_micro_spikes_removePLI-%d_CAR-%d_rejectNoiseSpikes-%d', int8(runRemovePLI), int8(runCAR), int8(runSpikeReject)));
+    if runStimulationArtifactRemoval
+        outputPath = sprintf('%s_removeStimArtifacts-%d',outputPath,int8(runStimulationArtifactRemoval));
+    end
     if ~exist(outputPath,'dir'); mkdir(outputPath); end
 
     jsonStimParams = jsonencode(stimulationArtifactParams, PrettyPrint=true);
