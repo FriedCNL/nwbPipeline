@@ -1,4 +1,4 @@
-function [computedTimeStamps, largeGap] = computeTimeStamps(timeStamps, numSamples)
+function [computedTimeStamps, largeGap] = computeTimeStamps(timeStamps, numSamples, idealSamplingInterval)
 % timeStamps, numSamples are returned by Nlx2MatCSC_v3. 
 
 % timeStamps: (seconds) the start timestamps of each block (512 samples)
@@ -22,7 +22,10 @@ for i = 1:length(timeStamps)
     startTS = timeStamps(i);
     if i < length(timeStamps)
         samplingInterval = (timeStamps(i+1) - timeStamps(i))/numSamples(i);
+    else
+        samplingInterval = idealSamplingInterval;        
     end
+
     theseTS = ((1:numSamples(i))-1) * samplingInterval + startTS;
     computedTimeStamps(startSample: endSample) = theseTS;
 end

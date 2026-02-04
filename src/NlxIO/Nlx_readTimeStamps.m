@@ -81,11 +81,13 @@ if any(numSamples(1:end-1) < 512)
 end
 
 % converts to nSamples per millisecond to be consistent with how we store data for Black Rock
+idealSamplingInterval = 1 / sampleFrequency(1);
 sampleFrequency = sampleFrequency(1) * 1e-3; 
 samplingInterval = milliseconds(1/sampleFrequency);
 
+
 % convert ts to seconds
 timeStamps = timeStamps * 1e-6; 
-[computedTimeStamps, largeGap] = computeTimeStamps(timeStamps, numSamples);
+[computedTimeStamps, largeGap] = computeTimeStamps(timeStamps, numSamples, idealSamplingInterval);
 
 end
