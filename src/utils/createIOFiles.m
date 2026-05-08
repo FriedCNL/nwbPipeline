@@ -21,6 +21,9 @@ end
 
 channelFileNames = readtable(fullfile(expOutFilePath, 'channelFileNames.csv'), Delimiter=',');
 channelFileNames = table2cell(channelFileNames);
+% readtable detects all-empty CSV columns as numeric (NaN). Replace any
+% non-char cells (NaN / missing) with '' so downstream string ops don't fail.
+channelFileNames(~cellfun(@ischar, channelFileNames)) = {''};
 
 % select macro/micro files and rename output file names so that alphabetic order
 % is consistent with temporal order.

@@ -85,6 +85,10 @@ for segment = 1: size(inFileNames, 2)
     timestampFullFile = fullfile(outFilePath, [timestampFileName, '_', suffix{segment}]);
     
     if ~(skipExist && exist(timestampFullFile, "file"))
+        if max(dataLength) == 0
+            fprintf('unpackData: no files processed for segment %d, skipping timestamps.\n', segment);
+            continue
+        end
         completeFileIndex = find(dataLength == max(dataLength));
         startIndx = 1;
         while startIndx <= length(completeFileIndex)

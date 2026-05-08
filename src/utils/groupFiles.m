@@ -109,6 +109,12 @@ elseif length(fileSuffix)>1
     warning("groupFiles: order files by file name. Make sure the order is correct by checking header of raw data! \n")
 end
 
+% Remove columns where every channel has an empty file path. This can
+% happen when header-only files (filtered by ignoreFilesWithSizeBelow)
+% introduced an extra suffix slot that has no real data after ordering.
+nonEmptyCols = any(~cellfun('isempty', groupFileNames), 1);
+groupFileNames = groupFileNames(:, nonEmptyCols);
+
 groupFileNames = cell2table([fileGroup(:), groupFileNames]);
 groupFileNames.Properties.VariableNames{1} = 'fileGroup';
 
