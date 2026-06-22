@@ -80,7 +80,16 @@ parfor i = 1:numPages
     posInPage = i - cumSumClusters(unitToPlot);
     nPagesInUnit = cumSumClusters(unitToPlot + 1) - cumSumClusters(unitToPlot);
     clusterInfo = struct2table(clustersToPlot{unitToPlot, stimuliType}{1});
-    clusterInfo = sortrows(clusterInfo, 'score', 'descend');
+    % clusterInfo = sortrows(clusterInfo, 'score', 'descend');
+    numRespSpikes = zeros(height(clusterInfo), 1);
+    for k = 1:height(clusterInfo)
+        spkTimes = clusterInfo{k, 'spikes'};
+        if iscell(spkTimes) && length(spkTimes) == 1, spkTimes = spkTimes{1}; end
+        numRespSpikes(k) = sum(cellfun(@(x) sum(x >= 0 & x <= stimLimits(end)), spkTimes));
+    end
+    clusterInfo.numRespSpikes = numRespSpikes;
+    clusterInfo = sortrows(clusterInfo, {'score', 'numRespSpikes'}, {'descend', 'descend'});
+   
 
     % plot spike waveforms:
     axes1 = axes(gcf, 'Position', getAxisRect(0, 1));
