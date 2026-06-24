@@ -1,5 +1,5 @@
-function generatePegasusConfigFile(patientNum, macroList, macroNumChannels,...
-    microList, microsToDuplicateList, miscMacros, savePath)
+function generatePegasusConfigFile(patientNum, macroList, macroNumChannels, macroStartChannels,...
+    microList, microsToDuplicateList, miscMacros,miscMacroChannels, savePath)
 
 % SYNTAX: generatePegasusConfigFile(patientNum,macroList,macrosWithNon7,...
 %     microList,miscMacros,savePath)
@@ -10,15 +10,16 @@ if ~exist('savePath','var')|| isempty(savePath)
     savePath = sprintf('%d_InitialGuess.cfg', patientNum);
 end
 
-if ~exist('miscMacros','var')|| isempty(miscMacros)
-    miscMacros = {
-        'C3','C4','PZ','Ez',... % used to include 'GlobalMicroRef'but decided to remove
-        'EOG1','EOG2','EMG1','EMG2','A1','A2',...
-        ... 'MICROPHONE',...
-        'HR_Ref','HR','TTLRef','TTLSync',...
-        'Analogue2','Analogue3'
-        };
-end
+% if ~exist('miscMacros','var')|| isempty(miscMacros)
+%     miscMacros = {
+%         'C3','C4','PZ','Ez',... % used to include 'GlobalMicroRef'but decided to remove
+%         'EOG1','EOG2','EMG1','EMG2','A1','A2',...
+%         ... 'MICROPHONE',...
+%         'HR_Ref','HR','TTLRef','TTLSync',...
+%         'Analogue2','Analogue3'
+%         };
+% end
+
 
 if ~exist('microsToDuplicateList', 'var')||isempty(microsToDuplicateList)
     microsToDuplicateList = {}; %{'RAH','RMH','LAH','LMH','REC','LEC','RA','LA','RPHG','LPHG'};
@@ -40,21 +41,28 @@ end
 if ~isempty(macroList)
     % startsAt = [0 cumsum(nChannels(1:end-1))]+96; % removed the +96 because
     % we are moving macros to sources 1-4:
-    startsAt = [0 cumsum(macroNumChannels(1:end-1))];
-    for i=1:length(macroList)
-        addMacrosToConfig(fid, startsAt(i), macroList{i}, macroNumChannels(i));
-        addMacrosToConfig(fid2, startsAt(i), macroList{i}, macroNumChannels(i));
+    for i = 1:length(macroList)
+        startAt = macroStartChannels(i) - 1;  % Convert GUI 1-based port number to Pegasus 0-based channel number
+        addMacrosToConfig(fid, startAt, macroList{i}, macroNumChannels(i));
+        addMacrosToConfig(fid2, startAt, macroList{i}, macroNumChannels(i));
     end
 
-    miscStart = startsAt(end) + macroNumChannels(end);
-    for i=1:length(miscMacros)
-        addMiscToConfig(fid, miscStart+i-1, miscMacros{i});
-    end
 end
 
 % if ~ismember('MICROPHONE',miscMacros)
 % addMicrophoneToConfig(fid);
 % end
+
+if ~isempty(miscMacros)
+
+    for i = 1:length(miscMacros)
+        thisMiscChannel = miscMacroChannels{i};  
+        if isempty(thisMiscChannel) || isnan(thisMiscChannel)
+            error('Missing Port Id for misc channel: %s', miscMacros{i});
+        end
+        addMiscToConfig(fid, thisMiscChannel, miscMacros{i});
+    end
+end
 
 for i=1:length(microList)
     if ~isempty(microList{i})
@@ -101,12 +109,18 @@ end
 
 % Microphone etc
 % extraPlots = {'MICROPHONE','TTLSync','HR'};
-extraPlots = {'TTLSync', 'HR'};
+extraPlots = {'Analogue2', 'Analogue3'};
 
 setUpTimeWindow(fid, 'Additional Plots')
 for i=1:length(extraPlots)
-    addCSCtoPlotWindow(fid, extraPlots{i}, 'Additional Plots');
+  if ismember(extraPlots{i}, miscMacros)
+        addCSCtoPlotWindow(fid, extraPlots{i}, 'Additional Plots');
+  end
 end
+% add Events plot 
+fprintf(fid,'-AddPlot "%s" "Events"\n', 'Additional Plots');
+fprintf(fid,'-SetPlotEnabled "%s" "Events" True\n', 'Additional Plots');
+fprintf(fid,'\n');
 
 setUpSpikeWindow(fid);
 for i=1:length(microList)
@@ -281,16 +295,18 @@ function addMiscToConfig(fid, thisChannel, miscName)
 %         'MICROPHONE','TTLSync','TTLRef','HR1','HR2',...
 %         'Analogue1','Analogue2'};
 
-switch miscName
-    % case 'Analogue1'
-    %     thisChannel = 224;
-    case 'Analogue2'
-        thisChannel = 225;
-    case 'Analogue3'
-        thisChannel = 226;
-    otherwise
-        %nothing to do, thisChannel is as was sent to the function
-end
+% Analogue defaults now defined in the generator GUI
+
+% switch miscName
+%     % case 'Analogue1'
+%     %     thisChannel = 224;
+%     case 'Analogue2'
+%         thisChannel = 225;
+%     case 'Analogue3'
+%         thisChannel = 226;
+%     otherwise
+%         %nothing to do, thisChannel is as was sent to the function
+% end
 
 thisRef = floor(thisChannel/32);%*2+1;
 

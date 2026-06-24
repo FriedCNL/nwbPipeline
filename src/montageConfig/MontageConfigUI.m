@@ -1,4 +1,4 @@
-function MontageConfigUI()
+function MontageConfigUI2()
 % create configure file for extracelluar recordings (Neuralynx and
 % Blackrock).
     scriptDir = fileparts(mfilename('fullpath'));
@@ -36,80 +36,90 @@ function MontageConfigUI()
     % Brain labels
     brainLabels = {
         'LA';           % amygdala/anterior STG
-        'LAC';          % anterior cingulate/anterior middle FG
-        'LACd';
-        'LACv';
-        'LAF';
         'LAH';
-        'LAIS';
-        'LEC';
-        'LMC';
-        'LMH';          % middle hippocampus/middle MTG
-        'LOF';          % orbitofrontal/anterior inferior FG
-        'LPC';
-        'LPCa';
-        'LPH';          % posterior hippocampus/posterior MTG
+        'LMH';
+        'LPH';          % middle hippocampus/middle MTG
         'LPHG';
+        'LAC';          % anterior cingulate/anterior middle FG
+        'LOF';         % orbitofrontal/anterior inferior FG 
+        'LOF-AC';
+        'LAI';
+        'LPC';
         'LPT';
-        'LPar';
+        'LFSG';
         'LpSMA';
+        'LpSMAa';
+        'LpSMAp';
         'LSMA';
-        'LST';
         'LSTG';         % middle STG/middle STG
         'LTO';
         'RA';
-        'RAC';
-        'RACd';
-        'RACv';
-        'RAF';
         'RAH';
-        'RAIS';
-        'REC';
-        'RMC';
         'RMH';
-        'ROF';
-        'RPC';
-        'RPCa';
         'RPH';
         'RPHG';
+        'REC';
+        'RAC';
+        'ROF';
+        'ROF-AC';
+        'RAI';
+        'RPC';
         'RPT';
-        'RPar';
+        'RFSG';
         'RpSMA';
+        'RpSMAa';
+        'RpSMAp';
         'RSMA';
-        'RST';
         'RSTG';
         'RTO'};
+        
 
     miscLabels = {
         'C3';
         'C4';
-        'PZ';
-        'Ez';
-        'EOG1';
-        'EOG2';
+        'F3';
+        'F4';
         'EMG1';
         'EMG2';
+        'EOG1';
+        'EOG2';
         'A1';
         'A2';
-        'MICROPHONE';
-        'HR_Ref';
-        'HR';
-        'TTLRef';
-        'TTLSync';
-        'Analogue1';
-        'Analogue2'};
+     %   'MICROPHONE';
+        % 'HR_Ref';
+        % 'HR';
+        % 'TTLRef';
+        % 'TTLSync';
+        'Analogue2';
+        'Analogue3'};
+
+    % Misc channels with fixed hardware port ids (preserved by Auto Port ID)
+    fixedMiscPortIds = {'Analogue2', 225; 'Analogue3', 226};
 
     customBrainLabel = 'Custom';
+
+    % Shared pool of user-added custom labels, shown at the top of both the
+    % micro port dropdowns and the macro add-channel dropdown.
+    customLabels = {};
+    macroAddPrompt = 'Add channel...';
+    macroCustomTrigger = 'Custom...';
+    macroAddDropdown = [];  % handle to the macro add-channel dropdown
+
+    % Brain label dropdown options: blank default first, then Custom, then labels
+    brainLabelOptions = [{''}; {customBrainLabel}; brainLabels(:)];
+    defaultBrainLabel = '';
 
     % Default headstage labels
     defaultHeadstageLabels = {'GA', 'GB', 'GC', 'GD'};
 
     numHeadstages = 4;
     numPortsPerHeadstage = 4;
-    headstageHandles = cell(numHeadstages, numPortsPerHeadstage + 1, 3); % Handles for micros, brain labels, custom label edit, and headstage label
+    headstageHandles = cell(numHeadstages, numPortsPerHeadstage + 1, 4); % Handles for micros, brain labels, custom label edit, port checkbox, and headstage label
     defaultNumChannelsMicro = '8';
 
     for headstageIdx = 1:numHeadstages
+        % GD headstage is disabled by default
+        defaultHeadstageEnabled = ~strcmp(defaultHeadstageLabels{headstageIdx}, 'GD');
         row = floor((headstageIdx - 1) / 2);
         col = mod(headstageIdx - 1, 2);
         headstagePanel = uipanel('Parent', montagePanel, 'Title', ['Headstage ' num2str(headstageIdx)], ...
@@ -121,7 +131,7 @@ function MontageConfigUI()
         headstageLabelEdit = uicontrol('Parent', headstagePanel, 'Style', 'edit', 'String', defaultHeadstageLabels{headstageIdx}, ...
                                   'Units', 'normalized', 'Position', [0.22, 0.85, 0.3, 0.1], 'FontSize', 12);
         % Headstage checkbox
-        headstageCheckbox = uicontrol('Parent', headstagePanel, 'Style', 'checkbox', 'Value', 1, ...
+        headstageCheckbox = uicontrol('Parent', headstagePanel, 'Style', 'checkbox', 'Value', defaultHeadstageEnabled, ...
                                  'Units', 'normalized', 'Position', [0.55, 0.85, 0.4, 0.1], 'String', 'Enable', 'FontSize', 12, ...
                                  'Callback', @(src, event)toggleHeadstageFields(headstageIdx, src));
 
@@ -131,7 +141,15 @@ function MontageConfigUI()
         for portIdx = 1:numPortsPerHeadstage
             % Port label
             uicontrol('Parent', headstagePanel, 'Style', 'text', 'String', ['Port ' num2str(portIdx)], ...
-                      'Units', 'normalized', 'Position', [0.01, 0.71 - 0.2 * (portIdx - 1), 0.2, 0.08], 'HorizontalAlignment', 'left', 'FontSize', 12);
+                      'Units', 'normalized', 'Position', [0.01, 0.71 - 0.2 * (portIdx - 1), 0.12, 0.08], 'HorizontalAlignment', 'left', 'FontSize', 12);
+
+            defaultPortEnabled = true;
+
+            % Port checkbox
+            portCheckbox = uicontrol('Parent', headstagePanel, 'Style', 'checkbox', 'Value', defaultPortEnabled, ...
+                                     'Units', 'normalized', 'Position', [0.14, 0.72 - 0.2 * (portIdx - 1), 0.07, 0.08], ...
+                                     'Callback', @(src, event)togglePortFields(headstageIdx, portIdx, src));
+
             % Number of Micros
             uicontrol('Parent', headstagePanel, 'Style', 'text', 'String', 'Micros:', ...
                       'Units', 'normalized', 'Position', [0.6, 0.72 - 0.2 * (portIdx - 1), 0.2, 0.08], 'HorizontalAlignment', 'left', 'FontSize', 12);
@@ -139,23 +157,36 @@ function MontageConfigUI()
                                    'Units', 'normalized', 'Position', [0.78, 0.73 - 0.2 * (portIdx - 1), 0.1, 0.07], 'FontSize', 12, ...
                                    'Callback', @validateNumChannels);
             % Brain label
-            brainLabelPopup = uicontrol('Parent', headstagePanel, 'Style', 'popupmenu', 'String', [brainLabels(:); {customBrainLabel}], ...
+            brainLabelPopup = uicontrol('Parent', headstagePanel, 'Style', 'popupmenu', 'String', brainLabelOptions, ...
+                                        'Value', find(strcmp(brainLabelOptions, defaultBrainLabel)), ...
                                         'Units', 'normalized', 'Position', [0.22, 0.70 - 0.2 * (portIdx - 1), 0.35, 0.1], 'FontSize', 12, ...
                                         'Callback', @(src, event)customBrainLabelCallback(src, headstageIdx, portIdx));
 
             % Custom label edit field (initially hidden)
             customLabelEdit = uicontrol('Parent', headstagePanel, 'Style', 'edit', 'String', '', ...
                                         'Units', 'normalized', 'Position', [0.22, 0.63 - 0.2 * (portIdx - 1), 0.5, 0.085], 'FontSize', 12, ...
-                                        'Visible', 'off');
+                                        'Visible', 'off', 'Callback', @(src, event)rebuildCustomPool());
 
             headstageHandles{headstageIdx, portIdx, 1} = microsEdit;
             headstageHandles{headstageIdx, portIdx, 2} = brainLabelPopup;
             headstageHandles{headstageIdx, portIdx, 3} = customLabelEdit;
+            headstageHandles{headstageIdx, portIdx, 4} = portCheckbox;
+
+            if ~defaultPortEnabled
+                togglePortFields(headstageIdx, portIdx, portCheckbox);
+            end
+        end
+
+        if ~defaultHeadstageEnabled
+            toggleHeadstageFields(headstageIdx, headstageCheckbox);
         end
     end
 
     % ------------------------ Channels Table Panel --------------------- %
-    function channelTable = createChannelTable(f, position, columnNames, labels, title)
+    function [channelTable, channelPanel] = createChannelTable(f, position, columnNames, labels, title, useDropdown)
+        if nargin < 6
+            useDropdown = false;
+        end
 
         channelPanel = uipanel('Parent', f, 'Title', title, ...
                                'Position', position, 'FontSize', 12);
@@ -163,8 +194,26 @@ function MontageConfigUI()
 
         columnWidth = {40, 75, 70, 70};
 
+        if useDropdown
+            % Macro: dropdown on top, larger raised table, control cluster at the bottom
+            tablePos     = [0.05, 0.20, 0.85, 0.72];
+            dropdownPos  = [0.05, 0.93, 0.90, 0.05];
+            selectAllPos = [0.05, 0.135, 0.60, 0.045];
+            addRowPos    = [0.05, 0.075, 0.43, 0.05];
+            removeRowPos = [0.52, 0.075, 0.43, 0.05];
+            moveUpPos    = [0.05, 0.015, 0.43, 0.05];
+            moveDownPos  = [0.52, 0.015, 0.43, 0.05];
+        else
+            tablePos     = [0.05, 0.12, 0.85, 0.83];
+            selectAllPos = [0.05, 0.95, 0.50, 0.04];
+            addRowPos    = [0.05, 0.06, 0.40, 0.04];
+            removeRowPos = [0.55, 0.06, 0.40, 0.04];
+            moveUpPos    = [0.05, 0.01, 0.40, 0.04];
+            moveDownPos  = [0.55, 0.01, 0.40, 0.04];
+        end
+
         channelTable = uitable('Parent', channelPanel, 'Units', 'normalized', ...
-            'Position', [0.05, 0.12, 0.85, 0.83], ...
+            'Position', tablePos, ...
             'ColumnName', columnNames, ...
             'ColumnEditable', true(1, length(columnNames)), ...
             'ColumnFormat', {'logical', 'char', 'numeric', 'numeric'}, ...
@@ -175,7 +224,7 @@ function MontageConfigUI()
         % Select all checkbox
         selectAllCheckbox = uicontrol( ...
             'Parent', channelPanel, 'Style', 'checkbox', 'String', 'Select All Channels', ...
-            'Units', 'normalized', 'Position', [0.05, 0.95, 0.5, 0.04], ...
+            'Units', 'normalized', 'Position', selectAllPos, ...
             'Callback', @(src, event)selectAllRows(src, event, channelTable), 'FontSize', 12);
 
         % Add listeners for mouse clicks and key presses
@@ -187,27 +236,42 @@ function MontageConfigUI()
         setappdata(channelTable, 'selectedCells', []);
         setappdata(channelTable, 'isShiftPressed', false);
 
-        % Add/Remove rows buttons
+        % Macro starts empty with a dropdown to add channels by label
+        if useDropdown
+            set(channelTable, 'Data', cell(0, length(columnNames)), ...  % start with an empty list
+                'CellEditCallback', @macroLabelEdited);  % capture labels typed straight into a cell
+            macroAddDropdown = uicontrol('Parent', channelPanel, 'Style', 'popupmenu', ...
+                      'String', [{macroAddPrompt}; {macroCustomTrigger}; customLabels(:); labels(:)], ...
+                      'Units', 'normalized', 'Position', dropdownPos, ...
+                      'Callback', @(src, event)addChannelFromDropdown(src, event, channelTable), 'FontSize', 12);
+        end
+
+        % Row controls
         uicontrol('Parent', channelPanel, 'Style', 'pushbutton', 'String', 'Add Row', ...
-                  'Units', 'normalized', 'Position', [0.05, 0.01, 0.4, 0.04], 'Callback', @(src, event)addRow(src, event, channelTable), 'FontSize', 12);
+                  'Units', 'normalized', 'Position', addRowPos, 'Callback', @(src, event)addRow(src, event, channelTable), 'FontSize', 12);
         uicontrol('Parent', channelPanel, 'Style', 'pushbutton', 'String', 'Remove Row', ...
-                  'Units', 'normalized', 'Position', [0.55, 0.01, 0.4, 0.04], 'Callback', @(src, event)removeRow(src, event, channelTable), 'FontSize', 12);
+                  'Units', 'normalized', 'Position', removeRowPos, 'Callback', @(src, event)removeRow(src, event, channelTable), 'FontSize', 12);
         uicontrol('Parent', channelPanel, 'Style', 'pushbutton', 'String', 'Move Up', ...
-                  'Units', 'normalized', 'Position', [0.05, 0.06, 0.4, 0.04], 'Callback', @(src, event)moveUp(src, event, channelTable), 'FontSize', 12);
+                  'Units', 'normalized', 'Position', moveUpPos, 'Callback', @(src, event)moveUp(src, event, channelTable), 'FontSize', 12);
         uicontrol('Parent', channelPanel, 'Style', 'pushbutton', 'String', 'Move Down', ...
-                  'Units', 'normalized', 'Position', [0.55, 0.06, 0.4, 0.04], 'Callback', @(src, event)moveDown(src, event, channelTable), 'FontSize', 12);
+                  'Units', 'normalized', 'Position', moveDownPos, 'Callback', @(src, event)moveDown(src, event, channelTable), 'FontSize', 12);
     end
 
     % Create the table for macro channels
     columnNames = {'', 'Label', 'Port Start', 'Port End'};
     position = [0.51, 0.125, 0.24, 0.84];
-    channelTable = createChannelTable(f, position, columnNames, brainLabels, 'Macro Channels');
+    channelTable = createChannelTable(f, position, columnNames, brainLabels, 'Macro Channels', true);
 
 
     % Create the table for misc channels
     columnNames = {'', 'Label', 'Port Id'};
     position = [0.76, 0.125, 0.20, 0.84];
-    miscChannelTable = createChannelTable(f, position, columnNames, miscLabels, 'Misc Channels');
+    [miscChannelTable, miscPanel] = createChannelTable(f, position, columnNames, miscLabels, 'Misc Channels');
+
+    % Auto-fill misc Port Ids continuing after the last macro channel
+    uicontrol('Parent', miscPanel, 'Style', 'pushbutton', 'String', 'Auto Port ID', ...
+              'Units', 'normalized', 'Position', [0.55, 0.95, 0.42, 0.045], ...
+              'Callback', @(s, e)autoFillPortId(channelTable, miscChannelTable), 'FontSize', 12);
 
     % ------------------------- Save Config Panel ----------------------- %
 
@@ -233,16 +297,21 @@ function MontageConfigUI()
     % ---------------------- callback functions ------------------------- %
 
     function createDefaultTableData(hObject, ~, labels)
-        % Create default table data with brain labels and misc macros
-
-
         numColumns = length(get(hObject, 'ColumnName'));
         data = cell(length(labels), numColumns);
+
         for i = 1:length(labels)
             data{i, 1} = false;
             data{i, 2} = labels{i};
+    
+            if numColumns == 3
+                idx = find(strcmp(labels{i}, fixedMiscPortIds(:, 1)), 1);
+                if ~isempty(idx)
+                    data{i, 3} = fixedMiscPortIds{idx, 2};
+                end
+            end
         end
-
+    
         set(hObject, 'Data', data);
     end
 
@@ -268,14 +337,39 @@ function MontageConfigUI()
         % Enable/disable headstage fields based on checkbox state
         for portIdx = 1:numPortsPerHeadstage
             if get(checkbox, 'Value') == 1
-                set(headstageHandles{headstageIdx, portIdx, 1}, 'Enable', 'on');
-                set(headstageHandles{headstageIdx, portIdx, 2}, 'Enable', 'on');
-                set(headstageHandles{headstageIdx, portIdx, 3}, 'Enable', 'on');
+                set(headstageHandles{headstageIdx, portIdx, 4}, 'Enable', 'on');
+                togglePortFields(headstageIdx, portIdx, headstageHandles{headstageIdx, portIdx, 4});
             else
+                set(headstageHandles{headstageIdx, portIdx, 4}, 'Enable', 'off');
                 set(headstageHandles{headstageIdx, portIdx, 1}, 'Enable', 'off');
                 set(headstageHandles{headstageIdx, portIdx, 2}, 'Enable', 'off');
                 set(headstageHandles{headstageIdx, portIdx, 3}, 'Enable', 'off');
             end
+        end
+    end
+
+    function togglePortFields(headstageIdx, portIdx, checkbox)
+        % Enable/disable port fields based on checkbox state
+        if get(checkbox, 'Value') == 1
+            set(headstageHandles{headstageIdx, portIdx, 1}, 'Enable', 'on');
+            set(headstageHandles{headstageIdx, portIdx, 2}, 'Enable', 'on');
+
+            brainLabelPopup = headstageHandles{headstageIdx, portIdx, 2};
+            selectedLabel = brainLabelPopup.String{brainLabelPopup.Value};
+            if strcmp(selectedLabel, customBrainLabel)
+                set(headstageHandles{headstageIdx, portIdx, 3}, 'Enable', 'on', 'Visible', 'on');
+            else
+                set(headstageHandles{headstageIdx, portIdx, 3}, 'Enable', 'on', 'Visible', 'off');
+            end
+
+            if str2double(get(headstageHandles{headstageIdx, portIdx, 1}, 'String')) == 0
+                set(headstageHandles{headstageIdx, portIdx, 1}, 'String', defaultNumChannelsMicro);
+            end
+        else
+            set(headstageHandles{headstageIdx, portIdx, 1}, 'String', '0');
+            set(headstageHandles{headstageIdx, portIdx, 1}, 'Enable', 'off');
+            set(headstageHandles{headstageIdx, portIdx, 2}, 'Enable', 'off');
+            set(headstageHandles{headstageIdx, portIdx, 3}, 'Enable', 'off', 'Visible', 'off');
         end
     end
 
@@ -287,6 +381,7 @@ function MontageConfigUI()
         else
             set(headstageHandles{headstageIdx, portIdx, 3}, 'Visible', 'off');
         end
+        rebuildCustomPool();
     end
 
     function loadConfigFile(~, ~)
@@ -324,15 +419,23 @@ function MontageConfigUI()
             for j = 1:numPortsPerHeadstage
                 portData = ports.(portFields{j});
                 set(headstageHandles{i, j, 1}, 'String', num2str(portData.Micros));
-                brainLabelIdx = find(strcmp(brainLabels, portData.BrainLabel));
+                set(headstageHandles{i, j, 4}, 'Value', portData.Micros > 0);
+                portBrainLabel = portData.BrainLabel;
+                if strcmp(portBrainLabel, 'NA')
+                    portBrainLabel = '';  % 0-channel placeholder maps back to the blank entry
+                end
+                brainLabelPopup = headstageHandles{i, j, 2};
+                optionList = brainLabelPopup.String;
+                brainLabelIdx = find(strcmp(optionList, portBrainLabel));
                 if isempty(brainLabelIdx)
-                    brainLabelIdx = length(brainLabels) + 1; % Custom label
-                    set(headstageHandles{i, j, 2}, 'Value', brainLabelIdx);
+                    brainLabelIdx = find(strcmp(optionList, customBrainLabel)); % Custom label
+                    set(brainLabelPopup, 'Value', brainLabelIdx);
                     set(headstageHandles{i, j, 3}, 'String', portData.BrainLabel, 'Visible', 'on');
                 else
-                    set(headstageHandles{i, j, 2}, 'Value', brainLabelIdx);
+                    set(brainLabelPopup, 'Value', brainLabelIdx);
                     set(headstageHandles{i, j, 3}, 'Visible', 'off');
                 end
+                togglePortFields(i, j, headstageHandles{i, j, 4});
             end
         end
 
@@ -344,6 +447,8 @@ function MontageConfigUI()
         Data = loadMacroChannels(config.miscChannels);
         set(miscChannelTable, 'Data', [num2cell(true(size(Data, 1), 1)), Data(:, 1:miscTableColumns-1)]);
         set(miscChannelTable, 'ColumnEditable', true(1, miscTableColumns));
+
+        rebuildCustomPool();  % seed shared customs from the loaded macro + micro labels
     end
 
     function saveConfig(~, ~)
@@ -368,14 +473,33 @@ function MontageConfigUI()
             config.Headstages.(sanitizedHeadstageLabel) = struct();
 
             for portIdx = 1:numPortsPerHeadstage
-                if strcmp(get(headstageHandles{headstageIdx, portIdx, 1}, 'Enable'), 'on')
-                    micros = get(headstageHandles{headstageIdx, portIdx, 1}, 'String');
-                    brainLabelIdx = get(headstageHandles{headstageIdx, portIdx, 2}, 'Value');
-                    if brainLabelIdx == length(brainLabels) + 1
+                if strcmp(get(headstageHandles{headstageIdx, portIdx, 4}, 'Enable'), 'on')
+                    if get(headstageHandles{headstageIdx, portIdx, 4}, 'Value') == 1
+                        micros = get(headstageHandles{headstageIdx, portIdx, 1}, 'String');
+                    else
+                        micros = '0';
+                    end
+                    brainLabelPopup = headstageHandles{headstageIdx, portIdx, 2};
+                    selectedLabel = brainLabelPopup.String{brainLabelPopup.Value};
+                    if strcmp(selectedLabel, customBrainLabel)
                         brainLabel = get(headstageHandles{headstageIdx, portIdx, 3}, 'String');
                     else
-                        brainLabel = brainLabels{brainLabelIdx};
+                        brainLabel = selectedLabel;
                     end
+
+                    if str2double(micros) > 0
+                        % Enabled port with channels must have a brain label
+                        if isempty(strtrim(brainLabel))
+                            errordlg(sprintf(['Headstage %s, Port %d has %s micros but no brain label.\n', ...
+                                'Set a brain label, or set micros to 0 to disable the port.'], ...
+                                headstageLabel, portIdx, micros), 'Missing Brain Label', 'modal');
+                            return
+                        end
+                    else
+                        % No channels on this port: use placeholder name
+                        brainLabel = 'NA';
+                    end
+
                     config.Headstages.(sanitizedHeadstageLabel).(['Port' num2str(portIdx)]) = struct( ...
                         'Micros', str2double(micros), ...
                         'BrainLabel', brainLabel);
@@ -389,7 +513,7 @@ function MontageConfigUI()
             end
         end
 
-        macroNumChannels = processChannelData(channelTable, 'macro');
+        [macroNumChannels, macroStartChannels] = processChannelData(channelTable, 'macro');
         processChannelData(miscChannelTable, 'misc');
 
         macroChannels = get(channelTable, 'Data');
@@ -406,9 +530,11 @@ function MontageConfigUI()
         generatePegasusConfigFile(str2double(patientID), ...
             macroChannels(:, 2), ...
             macroNumChannels, ...
+            macroStartChannels, ...
             microChannels, ...
             microsToDuplicateList, ...
             miscChannels(:, 2), ...
+            miscChannels(:, 3), ...
             configFileNameStr)
 
          showMessageBox(['Configuration saved to: ', newline, ...
@@ -425,57 +551,120 @@ function MontageConfigUI()
     end
 
 
-    function channelNum = processChannelData(table, channelType)
+    % function channelNum = processChannelData(table, channelType)
+    % 
+    %     channelData = get(table, 'Data');
+    %     incompleteRows = cellfun(@isempty, channelData(:, 2));
+    %     channelData = channelData(~incompleteRows, :);
+    % 
+    %     % check for duplicated channel names:
+    %     dupIdx = getDuplicates(channelData(:, 2));
+    %     if ~isempty(dupIdx)
+    %         errordlg([channelType, ' hase duplicated names:', sprintf(' %s', channelData{dupIdx, 2})], 'Error');
+    %     end
+    % 
+    %     rowsWithPortStart = ~cellfun(@isempty, channelData(:, 3));
+    %     channelData(rowsWithPortStart, :) = sortrows(channelData(rowsWithPortStart, :), 3);
+    %     channelData(:, 1) = {true};
+    % 
+    %     prevIdx = 0;
+    %     numChannels = size(channelData, 1);
+    %     for i = 1:numChannels
+    %         % automatically fill missing port index, assume each Label only
+    %         % has one port and no skipped ports.
+    %         if isempty(channelData{i, 3}) || isnan(channelData{i, 3})
+    %             channelData{i, 3} = prevIdx + 1;
+    %         end
+    % 
+    %         if size(channelData, 2) == 3
+    %             prevIdx = channelData{i, 3};
+    %             continue
+    %         end
+    % 
+    %         if isempty(channelData{i, 4}) || isnan(channelData{i, 4})
+    %             if i == size(channelData, 1) || isempty(channelData{i + 1, 3}) || isnan(channelData{i + 1, 3})
+    %                 channelData{i, 4} = channelData{i, 3};
+    %             else
+    %                 channelData{i, 4} = channelData{i + 1, 3} - 1;
+    %             end
+    %         end
+    %         prevIdx = channelData{i, 4};
+    % 
+    %         if i > 1 && channelData{i, 3} <= channelData{i - 1, 4}
+    %             errorMessage = sprintf('overlap port index in macro channel: %s and %s\n', channelData{i - 1, 2}, channelData{i, 2});
+    %             errordlg(errorMessage, 'Error');
+    %         end
+    % 
+    %     end
+    % 
+    %     if size(channelData, 2) > 3
+    %         channelNum = cell2mat(channelData(:, 4)) - cell2mat(channelData(:, 3)) + 1;
+    %     else
+    %         channelNum = ones(numChannels, 1);
+    %     end
+    % 
+    %     set(table, 'Data', channelData);
+    % end
+    function [channelNum, startChannels] = processChannelData(table, channelType)
 
         channelData = get(table, 'Data');
         incompleteRows = cellfun(@isempty, channelData(:, 2));
         channelData = channelData(~incompleteRows, :);
 
-        % check for duplicated channel names:
+        % Check for duplicated channel names
         dupIdx = getDuplicates(channelData(:, 2));
         if ~isempty(dupIdx)
-            errordlg([channelType, ' hase duplicated names:', sprintf(' %s', channelData{dupIdx, 2})], 'Error');
+            errordlg([channelType, ' has duplicated names:', sprintf(' %s', channelData{dupIdx, 2})], 'Error');
         end
 
+        if strcmp(channelType, 'misc')
+            for i = 1:size(channelData, 1)
+                if isempty(channelData{i, 3}) || isnan(channelData{i, 3})
+                    error('Missing Port Id for misc channel: %s', channelData{i, 2});
+                end
+            end
+
+            channelData(:, 1) = {true};
+            channelNum = ones(size(channelData, 1), 1);
+            startChannels = cell2mat(channelData(:, 3));
+            set(table, 'Data', channelData);
+            return
+        end
+
+        % Macro channels
         rowsWithPortStart = ~cellfun(@isempty, channelData(:, 3));
-        channelData(rowsWithPortStart, :) = sortrows(channelData(rowsWithPortStart, :), 3);
+        if any(~rowsWithPortStart)
+            missingRows = find(~rowsWithPortStart);
+            error('Missing Port Start for macro channel: %s', channelData{missingRows(1), 2});
+        end
+
+        channelData = sortrows(channelData, 3);
         channelData(:, 1) = {true};
 
-        prevIdx = 0;
         numChannels = size(channelData, 1);
+
         for i = 1:numChannels
-            % automatically fill missing port index, assume each Label only
-            % has one port and no skipped ports.
-            if isempty(channelData{i, 3}) || isnan(channelData{i, 3})
-                channelData{i, 3} = prevIdx + 1;
-            end
-
-            if size(channelData, 2) == 3
-                prevIdx = channelData{i, 3};
-                continue
-            end
-
             if isempty(channelData{i, 4}) || isnan(channelData{i, 4})
-                if i == size(channelData, 1) || isempty(channelData{i + 1, 3}) || isnan(channelData{i + 1, 3})
-                    channelData{i, 4} = channelData{i, 3};
+                if i == numChannels
+                    error('Missing final Port End for macro channel: %s', channelData{i, 2});
                 else
                     channelData{i, 4} = channelData{i + 1, 3} - 1;
                 end
             end
-            prevIdx = channelData{i, 4};
 
-            if i > 1 && channelData{i, 3} <= channelData{i - 1, 4}
-                errorMessage = sprintf('overlap port index in macro channel: %s and %s\n', channelData{i - 1, 2}, channelData{i, 2});
-                errordlg(errorMessage, 'Error');
+            if channelData{i, 4} < channelData{i, 3}
+                error('Port End is before Port Start for macro channel: %s', channelData{i, 2});
             end
 
+            if i > 1 && channelData{i, 3} <= channelData{i - 1, 4}
+                errorMessage = sprintf('overlap port index in macro channel: %s and %s\n', ...
+                    channelData{i - 1, 2}, channelData{i, 2});
+                errordlg(errorMessage, 'Error');
+            end
         end
 
-        if size(channelData, 2) > 3
-            channelNum = cell2mat(channelData(:, 4)) - cell2mat(channelData(:, 3)) + 1;
-        else
-            channelNum = ones(numChannels, 1);
-        end
+        startChannels = cell2mat(channelData(:, 3));
+        channelNum = cell2mat(channelData(:, 4)) - startChannels + 1;
 
         set(table, 'Data', channelData);
     end
@@ -486,18 +675,150 @@ function MontageConfigUI()
 
         % Create a text control to display the message
         uicontrol('Parent', d, ...
-                  'Style', 'text', ...
-                  'Position', [20, height-140, width-40, height-20], ...
-                  'String', message, ...
-                  'HorizontalAlignment', 'left', ...
-                  'FontSize', 15);
+            'Style', 'text', ...
+            'Position', [20, height-140, width-40, height-20], ...
+            'String', message, ...
+            'HorizontalAlignment', 'left', ...
+            'FontSize', 15);
 
         % Create a button to close the dialog
         uicontrol('Parent', d, ...
-                  'Position', [width/2-60, 20, 120, 30], ...
-                  'String', 'Close', ...
+            'Position', [width/2-60, 20, 120, 30], ...
+            'String', 'Close', ...
                   'Callback', 'delete(gcf)', ...
                   'FontSize', 17);
+    end
+
+    function autoFillPortId(macroTable, miscTable)
+        % Re-fill misc Port Ids sequentially, continuing the port numbering
+        % after the last (highest) value used by the macro channels. Runs fresh
+        % on every press; channels with a fixed hardware port id (Analogues) and
+        % blank rows are left untouched.
+        macroData = get(macroTable, 'Data');
+        portCells = macroData(:, 3:4);  % macro Port Start / Port End
+        isNum = ~cellfun(@(x) isempty(x) || (isnumeric(x) && isnan(x)), portCells);
+        portVals = cell2mat(portCells(isNum));
+        if isempty(portVals)
+            errordlg(['No macro channel port numbers found. ', ...
+                'Fill in the macro Port Start/End values first.'], 'Auto Port ID', 'modal');
+            return
+        end
+        nextPort = max(portVals) + 1;
+
+        miscData = get(miscTable, 'Data');
+        for i = 1:size(miscData, 1)
+            label = miscData{i, 2};
+            if isempty(label) || ismember(label, fixedMiscPortIds(:, 1))
+                continue  % keep blank rows and fixed hardware port ids
+            end
+            miscData{i, 3} = nextPort;
+            nextPort = nextPort + 1;
+        end
+        set(miscTable, 'Data', miscData);
+    end
+
+    function addChannelFromDropdown(src, ~, table)
+        % Add a channel row for the label selected in the dropdown
+        selectedIdx = get(src, 'Value');
+        if selectedIdx == 1
+            return  % "Add channel..." prompt selected, nothing to add
+        end
+        labelList = get(src, 'String');
+        label = labelList{selectedIdx};
+        set(src, 'Value', 1);  % reset dropdown back to the prompt
+
+        if strcmp(label, macroCustomTrigger)
+            answer = inputdlg('Enter custom channel label:', 'Custom Channel', [1 40]);
+            if isempty(answer) || isempty(strtrim(answer{1}))
+                return
+            end
+            label = strtrim(answer{1});
+        end
+
+        data = get(table, 'Data');
+        newRow = {false, label, [], []};
+        data(end + 1, :) = newRow(1:size(data, 2));
+        set(table, 'Data', data);
+
+        rebuildCustomPool();  % refresh shared customs from live usage
+    end
+
+    function macroLabelEdited(~, eventdata)
+        % When a macro Label cell is typed/edited, recompute the custom pool so
+        % new labels appear and labels no longer used disappear.
+        if isempty(eventdata.Indices) || eventdata.Indices(2) ~= 2  % Label column only
+            return
+        end
+        rebuildCustomPool();
+    end
+
+    function rebuildCustomPool()
+        % Recompute the shared custom-label pool from labels actually in use, so
+        % the dropdowns can never offer a stale/unused entry. A custom label is
+        % any non-blank label (in the macro table or on a micro port) that is not
+        % one of the standard brainLabels.
+        used = {};
+
+        if ~isempty(macroAddDropdown) && isgraphics(macroAddDropdown)
+            macroData = get(channelTable, 'Data');
+            for i = 1:size(macroData, 1)
+                used = appendCustomLabel(used, macroData{i, 2});
+            end
+        end
+
+        for h = 1:numHeadstages
+            for p = 1:numPortsPerHeadstage
+                popup = headstageHandles{h, p, 2};
+                if isempty(popup) || ~isgraphics(popup)
+                    continue
+                end
+                sel = popup.String{popup.Value};
+                if strcmp(sel, customBrainLabel)
+                    sel = get(headstageHandles{h, p, 3}, 'String');  % typed custom text
+                end
+                used = appendCustomLabel(used, sel);
+            end
+        end
+
+        customLabels = unique(used, 'stable');
+        customLabels = customLabels(:);
+        refreshLabelDropdowns();
+    end
+
+    function used = appendCustomLabel(used, lbl)
+        % Append lbl to 'used' if it is a non-blank, non-standard custom label.
+        if ischar(lbl)
+            lbl = strtrim(lbl);
+            if ~isempty(lbl) && ~strcmp(lbl, customBrainLabel) && ~any(strcmp(lbl, brainLabels))
+                used{end + 1, 1} = lbl;
+            end
+        end
+    end
+
+    function refreshLabelDropdowns()
+        % Rebuild micro and macro dropdowns so shared custom labels show at the
+        % top, preserving each control's current selection.
+        microOptions = [{''}; {customBrainLabel}; customLabels(:); brainLabels(:)];
+        for h = 1:numHeadstages
+            for p = 1:numPortsPerHeadstage
+                popup = headstageHandles{h, p, 2};
+                if isempty(popup) || ~isgraphics(popup)
+                    continue
+                end
+                currentStr = popup.String{popup.Value};
+                newIdx = find(strcmp(microOptions, currentStr), 1);
+                if isempty(newIdx)
+                    newIdx = 1;
+                end
+                popup.Value = 1;  % avoid transient out-of-range while swapping String
+                popup.String = microOptions;
+                popup.Value = newIdx;
+            end
+        end
+        if ~isempty(macroAddDropdown) && isgraphics(macroAddDropdown)
+            macroAddDropdown.String = [{macroAddPrompt}; {macroCustomTrigger}; customLabels(:); brainLabels(:)];
+            macroAddDropdown.Value = 1;
+        end
     end
 
     function addRow(~, ~, table)
@@ -540,6 +861,7 @@ function MontageConfigUI()
             data(rowsToDelete, :) = [];
             set(table, 'Data', data);
         end
+        rebuildCustomPool();  % a removed row may retire a custom label
     end
 
     function moveUp(~, ~, table)
