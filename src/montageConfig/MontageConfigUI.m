@@ -1,4 +1,4 @@
-function MontageConfigUI2()
+﻿function MontageConfigUI()
 % create configure file for extracelluar recordings (Neuralynx and
 % Blackrock).
     scriptDir = fileparts(mfilename('fullpath'));
