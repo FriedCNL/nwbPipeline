@@ -10,6 +10,20 @@ numBundles = ceil(size(microFiles, 1) / channelsPerBundle);
 nSegments = size(microFiles, 2);
 bundleMedianFiles = cell(numBundles, size(microFiles, 2));
 
+% Create the bundleMedian output directories up front, serially. Creating
+% them lazily inside the parfor below races across workers and fails on
+% sshfs/network mounts (stale metadata cache => "unable to write into" the
+% just-created folder). Mirror the unpacking path, which makes its output
+% dirs once before any parallel writes.
+nonEmptyFiles = microFiles(~cellfun(@isempty, microFiles));
+bundleMedianDirs = unique(cellfun(@(f) fullfile(fileparts(f), 'bundleMedian'), ...
+    nonEmptyFiles, 'UniformOutput', false));
+for d = 1:numel(bundleMedianDirs)
+    if ~exist(bundleMedianDirs{d}, "dir")
+        mkdir(bundleMedianDirs{d});
+    end
+end
+
 parfor i = 1: numBundles
     for j = 1: nSegments
         bundleStartIdx = (i-1) * channelsPerBundle + 1;
