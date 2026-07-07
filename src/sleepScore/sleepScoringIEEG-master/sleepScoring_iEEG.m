@@ -84,10 +84,18 @@ classdef sleepScoring_iEEG < handle
             validLength = min(length(invalidEpochs), length(P_delta));
             P_delta(invalidEpochs(1:validLength)) = NaN;
 
+            % Thresholds computed using only valid epochs (non-NaN)
             thSleepInclusion = prctile(P_delta(~isnan(P_delta)), obj.NREMprctile);
-            thREMInclusion = prctile(P_delta(~isnan(P_delta)), obj.REMprctile);
+            thREMInclusion   = prctile(P_delta(~isnan(P_delta)), obj.REMprctile);
+            
+            % Initial threshold decisions
             pointsPassedSleepThresh = P_delta > thSleepInclusion;
-            pointsPassedREMThresh = P_delta < thREMInclusion;
+            pointsPassedREMThresh   = P_delta < thREMInclusion;
+            
+            % Force invalid epochs to be unclassified (0)
+            validLength = min(length(invalidEpochs), length(pointsPassedSleepThresh));
+            pointsPassedSleepThresh(invalidEpochs(1:validLength)) = 0;
+            pointsPassedREMThresh(invalidEpochs(1:validLength))   = 0;
             
             %find points which pass the peak threshold
             meanSleep = nanmean(P_delta);
@@ -138,16 +146,24 @@ classdef sleepScoring_iEEG < handle
             
             %% Compare threshold-based sleep-scoring to a data-driven cluster approach
             D1 = [P_delta(:), P_sp(:)];
-            gm = fitgmdist(D1, 2);
-            P = posterior(gm, D1);
+            % only use rows with complete data (and keep alignment)
+            valid = all(~isnan(D1), 2);
+            N = min(length(valid), length(invalidEpochs));
+            valid(1:N) = valid(1:N) & ~invalidEpochs(1:N)';
+
+            gm = fitgmdist(D1(valid,:), 2);
+            P = posterior(gm, D1(valid,:));
+
             C1 = find(P(:,1)>P(:,2));
             C2 = find(P(:,2)>P(:,1));
 
             Svec = zeros(1,length(D1));
+            valid_idx = find(valid);
+
             if gm.mu(1) > gm.mu(2)
-                Svec(C1) = 1;
+                Svec(valid_idx(C1)) = 1;
             else
-                Svec(C2) = 1;
+                Svec(valid_idx(C2)) = 1;
             end
             
             hold on
@@ -174,6 +190,10 @@ classdef sleepScoring_iEEG < handle
                         data_merge = ~Svec;
                     end
                 end
+
+                % Never allow invalid epochs to be included or bridged across
+                validLength = min(length(invalidEpochs), length(data_merge));
+                data_merge(invalidEpochs(1:validLength)) = 0;
 
                 % Treat NaN epochs as not passing threshold (set to 0)
                 data_merge(isnan(data_merge)) = 0;
@@ -425,6 +445,10 @@ classdef sleepScoring_iEEG < handle
             fprintf('remove extreme noise...\n');
                 timeWin = 10*obj.samplingRate;
                 dataL = size(data,2);
+                if dataL==1
+                    dataL=size(data,1);
+                    disp('Warning data size returned 1 so trying other dimension')
+                end
                 nTimeWins = floor(dataL/timeWin);
                 % dataLmin = dataL/obj.samplingRate/60;
                 
